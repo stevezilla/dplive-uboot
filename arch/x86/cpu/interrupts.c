@@ -8,29 +8,21 @@
  * Portions of this file are derived from the Linux kernel source
  *  Copyright (C) 1991, 1992  Linus Torvalds
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
+#include <asm/cache.h>
+#include <asm/control_regs.h>
 #include <asm/interrupt.h>
 #include <asm/io.h>
 #include <asm/processor-flags.h>
+#include <linux/compiler.h>
+#include <asm/msr.h>
+#include <asm/u-boot-x86.h>
+#include <asm/i8259.h>
+
+DECLARE_GLOBAL_DATA_PTR;
 
 #define DECLARE_INTERRUPT(x) \
 	".globl irq_"#x"\n" \
@@ -40,73 +32,7 @@
 	"pushl $"#x"\n" \
 	"jmp irq_common_entry\n"
 
-/*
- * Volatile isn't enough to prevent the compiler from reordering the
- * read/write functions for the control registers and messing everything up.
- * A memory clobber would solve the problem, but would prevent reordering of
- * all loads stores around it, which can hurt performance. Solution is to
- * use a variable and mimic reads and writes to it to enforce serialisation
- */
-static unsigned long __force_order;
-
-static inline unsigned long read_cr0(void)
-{
-	unsigned long val;
-	asm volatile("mov %%cr0,%0\n\t" : "=r" (val), "=m" (__force_order));
-	return val;
-}
-
-static inline unsigned long read_cr2(void)
-{
-	unsigned long val;
-	asm volatile("mov %%cr2,%0\n\t" : "=r" (val), "=m" (__force_order));
-	return val;
-}
-
-static inline unsigned long read_cr3(void)
-{
-	unsigned long val;
-	asm volatile("mov %%cr3,%0\n\t" : "=r" (val), "=m" (__force_order));
-	return val;
-}
-
-static inline unsigned long read_cr4(void)
-{
-	unsigned long val;
-	asm volatile("mov %%cr4,%0\n\t" : "=r" (val), "=m" (__force_order));
-	return val;
-}
-
-static inline unsigned long get_debugreg(int regno)
-{
-	unsigned long val = 0;	/* Damn you, gcc! */
-
-	switch (regno) {
-	case 0:
-		asm("mov %%db0, %0" :"=r" (val));
-		break;
-	case 1:
-		asm("mov %%db1, %0" :"=r" (val));
-		break;
-	case 2:
-		asm("mov %%db2, %0" :"=r" (val));
-		break;
-	case 3:
-		asm("mov %%db3, %0" :"=r" (val));
-		break;
-	case 6:
-		asm("mov %%db6, %0" :"=r" (val));
-		break;
-	case 7:
-		asm("mov %%db7, %0" :"=r" (val));
-		break;
-	default:
-		val = 0;
-	}
-	return val;
-}
-
-void dump_regs(struct irq_regs *regs)
+static void dump_regs(struct irq_regs *regs)
 {
 	unsigned long cr0 = 0L, cr2 = 0L, cr3 = 0L, cr4 = 0L;
 	unsigned long d0, d1, d2, d3, d6, d7;
@@ -120,7 +46,8 @@ void dump_regs(struct irq_regs *regs)
 	printf("ESI: %08lx EDI: %08lx EBP: %08lx ESP: %08lx\n",
 		regs->esi, regs->edi, regs->ebp, regs->esp);
 	printf(" DS: %04x ES: %04x FS: %04x GS: %04x SS: %04x\n",
-	       (u16)regs->xds, (u16)regs->xes, (u16)regs->xfs, (u16)regs->xgs, (u16)regs->xss);
+	       (u16)regs->xds, (u16)regs->xes, (u16)regs->xfs,
+	       (u16)regs->xgs, (u16)regs->xss);
 
 	cr0 = read_cr0();
 	cr2 = read_cr2();
@@ -164,21 +91,21 @@ struct idt_entry {
 	u8	res;
 	u8	access;
 	u16	base_high;
-} __attribute__ ((packed));
+} __packed;
 
 struct desc_ptr {
 	unsigned short size;
 	unsigned long address;
 	unsigned short segment;
-} __attribute__((packed));
+} __packed;
 
-struct idt_entry idt[256];
+struct idt_entry idt[256] __aligned(16);
 
 struct desc_ptr idt_ptr;
 
 static inline void load_idt(const struct desc_ptr *dtr)
 {
-	asm volatile("cs lidt %0"::"m" (*dtr));
+	asm volatile("cs lidt %0" : : "m" (*dtr));
 }
 
 void set_vector(u8 intnum, void *routine)
@@ -187,6 +114,11 @@ void set_vector(u8 intnum, void *routine)
 	idt[intnum].base_low = (u16)((u32)(routine) & 0xffff);
 }
 
+/*
+ * Ideally these would be defined static to avoid a checkpatch warning, but
+ * the compiler cannot see them in the inline asm and complains that they
+ * aren't defined
+ */
 void irq_0(void);
 void irq_1(void);
 
@@ -197,11 +129,8 @@ int cpu_init_interrupts(void)
 	int irq_entry_size = irq_1 - irq_0;
 	void *irq_entry = (void *)irq_0;
 
-	/* Just in case... */
-	disable_interrupts();
-
 	/* Setup the IDT */
-	for (i=0;i<256;i++) {
+	for (i = 0; i < 256; i++) {
 		idt[i].access = 0x8e;
 		idt[i].res = 0;
 		idt[i].selector = 0x10;
@@ -214,9 +143,6 @@ int cpu_init_interrupts(void)
 	idt_ptr.segment = 0x18;
 
 	load_idt(&idt_ptr);
-
-	/* It is now safe to enable interrupts */
-	enable_interrupts();
 
 	return 0;
 }
@@ -238,7 +164,26 @@ int disable_interrupts(void)
 
 	asm volatile ("pushfl ; popl %0 ; cli\n" : "=g" (flags) : );
 
-	return flags & X86_EFLAGS_IF; /* IE flags is bit 9 */
+	return flags & X86_EFLAGS_IF;
+}
+
+int interrupt_init(void)
+{
+	/* Just in case... */
+	disable_interrupts();
+
+#ifdef CONFIG_SYS_PCAT_INTERRUPTS
+	/* Initialize the master/slave i8259 pic */
+	i8259_init();
+#endif
+
+	/* Initialize core interrupt and exception functionality of CPU */
+	cpu_init_interrupts();
+
+	/* It is now safe to enable interrupts */
+	enable_interrupts();
+
+	return 0;
 }
 
 /* IRQ Low-Level Service Routine */
@@ -255,7 +200,7 @@ void irq_llsr(struct irq_regs *regs)
 	case 0x00:
 		printf("Divide Error (Division by zero)\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x01:
 		printf("Debug Interrupt (Single step)\n");
@@ -272,32 +217,32 @@ void irq_llsr(struct irq_regs *regs)
 	case 0x04:
 		printf("Overflow\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x05:
 		printf("BOUND Range Exceeded\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x06:
 		printf("Invalid Opcode (UnDefined Opcode)\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x07:
 		printf("Device Not Available (No Math Coprocessor)\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x08:
 		printf("Double fault\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x09:
 		printf("Co-processor segment overrun\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x0a:
 		printf("Invalid TSS\n");
@@ -306,12 +251,12 @@ void irq_llsr(struct irq_regs *regs)
 	case 0x0b:
 		printf("Segment Not Present\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x0c:
 		printf("Stack Segment Fault\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x0d:
 		printf("General Protection\n");
@@ -320,7 +265,7 @@ void irq_llsr(struct irq_regs *regs)
 	case 0x0e:
 		printf("Page fault\n");
 		dump_regs(regs);
-		while(1);
+		hang();
 		break;
 	case 0x0f:
 		printf("Floating-Point Error (Math Fault)\n");

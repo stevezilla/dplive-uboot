@@ -7,23 +7,7 @@
  *
  * Configuation settings for the MPL VCMA9 board.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef __CONFIG_H
@@ -36,20 +20,19 @@
  * High Level Configuration Options
  * (easy to change)
  */
-#define CONFIG_ARM920T		/* This is an ARM920T Core */
-#define CONFIG_S3C24X0		/* in a SAMSUNG S3C24x0-type SoC */
+#define CONFIG_S3C24X0		/* This is a SAMSUNG S3C24x0-type SoC */
 #define CONFIG_S3C2410		/* specifically a SAMSUNG S3C2410 SoC */
 #define CONFIG_VCMA9		/* on a MPL VCMA9 Board  */
 #define CONFIG_MACH_TYPE	MACH_TYPE_MPL_VCMA9 /* Machine type */
 
 #define CONFIG_SYS_TEXT_BASE	0x0
 
+#define CONFIG_SYS_GENERIC_BOARD
+
 #define CONFIG_SYS_ARM_CACHE_WRITETHROUGH
 
 /* input clock of PLL (VCMA9 has 12MHz input clock) */
 #define CONFIG_SYS_CLK_FREQ	12000000
-
-#undef CONFIG_USE_IRQ		/* we don't need IRQ/FIQ stuff */
 
 #define CONFIG_CMDLINE_TAG	/* enable passing of ATAGs */
 #define CONFIG_SETUP_MEMORY_TAGS
@@ -83,7 +66,6 @@
 #define CONFIG_BOARD_LATE_INIT
 
 #define CONFIG_SYS_HUSH_PARSER
-#define CONFIG_SYS_PROMPT_HUSH_PS2 "> "
 #define CONFIG_CMDLINE_EDITING
 
 /*
@@ -91,12 +73,12 @@
  * the MPL VCMA9 is equipped with an ATMEL 24C256 EEPROM at
  * address 0x50 with 16bit addressing
  */
-#define CONFIG_HARD_I2C				/* I2C with hardware support */
-#define CONFIG_SYS_I2C_SPEED		100000	/* I2C speed */
-#define CONFIG_SYS_I2C_SLAVE		0x7F	/* I2C slave addr */
+#define CONFIG_SYS_I2C
 
 /* we use the built-in I2C controller */
-#define CONFIG_DRIVER_S3C24X0_I2C
+#define CONFIG_SYS_I2C_S3C24X0
+#define CONFIG_SYS_I2C_S3C24X0_SPEED    100000	/* I2C speed */
+#define CONFIG_SYS_I2C_S3C24X0_SLAVE    0x7F	/* I2C slave addr */
 
 #define CONFIG_SYS_I2C_EEPROM_ADDR	0x50
 #define CONFIG_SYS_I2C_EEPROM_ADDR_LEN	2
@@ -127,6 +109,7 @@
 
 /* USB support (currently only works with D-cache off) */
 #define CONFIG_USB_OHCI
+#define CONFIG_USB_OHCI_S3C24XX
 #define CONFIG_USB_KEYBOARD
 #define CONFIG_USB_STORAGE
 #define CONFIG_DOS_PARTITION
@@ -155,8 +138,6 @@
 #if defined(CONFIG_CMD_KGDB)
 /* speed to run kgdb serial port */
 #define CONFIG_KGDB_BAUDRATE		115200
-/* what's this ? it's not used anywhere */
-#define CONFIG_KGDB_SER_INDEX		2	/* which serial port to use */
 #endif
 
 /* Miscellaneous configurable options */
@@ -169,8 +150,7 @@
 /* Boot Argument Buffer Size */
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
 
-/* to be activated as soon as s3c24x0 has print_cpuinfo support */
-/*#define CONFIG_DISPLAY_CPUINFO*/			/* Display cpu info */
+#define CONFIG_DISPLAY_CPUINFO				/* Display cpu info */
 #define CONFIG_DISPLAY_BOARDINFO			/* Display board info */
 
 #define CONFIG_SYS_MEMTEST_START	0x30000000	/* memtest works on */
@@ -180,10 +160,6 @@
 #define CONFIG_SYS_LOAD_ADDR		0x30800000
 
 /* we configure PWM Timer 4 to 1ms 1000Hz  */
-#define CONFIG_SYS_HZ			1000
-
-/* valid baudrates */
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 9600, 19200, 38400, 57600, 115200 }
 
 /* support additional compression methods */
 #define CONFIG_BZIP2
@@ -195,16 +171,6 @@
 #define VERSION_TAG "unstable"
 #define CONFIG_IDENT_STRING "\n(c) 2003 - 2011 by MPL AG Switzerland, " \
 			    "MEV-10080-001 " VERSION_TAG
-
-/*
- * Stack sizes
- * The stack sizes are set up in start.S using the settings below
- */
-#define CONFIG_STACKSIZE	(128 * 1024)	/* regular stack */
-#ifdef CONFIG_USE_IRQ
-#define CONFIG_STACKSIZE_IRQ	(4 * 1024)	/* IRQ stack */
-#define CONFIG_STACKSIZE_FIQ	(4 * 1024)	/* FIQ stack */
-#endif
 
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS	1		/* we have 1 bank of DRAM */
@@ -237,7 +203,6 @@
 #define CONFIG_NAND_S3C2410
 #define CONFIG_SYS_S3C2410_NAND_HWECC
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
-#define NAND_MAX_CHIPS			1
 #define CONFIG_SYS_NAND_BASE		0x4E000000
 #define CONFIG_S3C24XX_CUSTOM_NAND_TIMING
 #define CONFIG_S3C24XX_TACLS		1
@@ -249,7 +214,6 @@
 
 /* File system */
 #define CONFIG_CMD_FAT
-#define CONFIG_CMD_EXT2
 #define CONFIG_CMD_UBI
 #define CONFIG_CMD_UBIFS
 #define CONFIG_CMD_JFFS2

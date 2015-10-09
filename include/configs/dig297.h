@@ -10,23 +10,7 @@
  *
  * Configuration settings for the Comelit DIG297 board.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef __CONFIG_H
@@ -39,20 +23,24 @@
 #define MACH_TYPE_OMAP3_CPS 2751
 #endif
 #define CONFIG_MACH_TYPE MACH_TYPE_OMAP3_CPS
+/* Common ARM Erratas */
+#define CONFIG_ARM_ERRATA_454179
+#define CONFIG_ARM_ERRATA_430973
+#define CONFIG_ARM_ERRATA_621766
 
 /*
  * High Level Configuration Options
  */
 #define CONFIG_OMAP		/* in a TI OMAP core */
-#define CONFIG_OMAP34XX		/* which is a 34XX */
-#define CONFIG_OMAP3430		/* which is in a 3430 */
+#define CONFIG_OMAP_GPIO
+#define CONFIG_OMAP_COMMON
 
 #define CONFIG_SYS_TEXT_BASE	0x80008000
 
 #define CONFIG_SDRC	/* The chip has SDRC controller */
 
 #include <asm/arch/cpu.h>		/* get chip and board defs */
-#include <asm/arch/omap3.h>
+#include <asm/arch/omap.h>
 
 /*
  * Display CPU and Board information
@@ -64,7 +52,6 @@
 #define V_OSCK			26000000	/* Clock output from T2 */
 #define V_SCLK			(V_OSCK >> 1)
 
-#undef CONFIG_USE_IRQ				/* no support for IRQs */
 #define CONFIG_MISC_INIT_R
 
 #define CONFIG_CMDLINE_TAG			/* enable passing of ATAGs */
@@ -110,9 +97,6 @@
 #define CONFIG_OMAP_HSMMC		1
 #define CONFIG_DOS_PARTITION
 
-/* DDR - I use Micron DDR */
-#define CONFIG_OMAP3_MICRON_DDR
-
 /* library portions to compile in */
 #define CONFIG_RBTREE
 #define CONFIG_MTD_PARTITIONS
@@ -142,12 +126,10 @@
 #undef CONFIG_CMD_NFS		/* NFS support			*/
 
 #define CONFIG_SYS_NO_FLASH
-#define CONFIG_HARD_I2C
-#define CONFIG_SYS_I2C_SPEED		100000
-#define CONFIG_SYS_I2C_SLAVE		1
-#define CONFIG_SYS_I2C_BUS		0
-#define CONFIG_SYS_I2C_BUS_SELECT	1
-#define CONFIG_DRIVER_OMAP34XX_I2C	1
+#define CONFIG_SYS_I2C
+#define CONFIG_SYS_OMAP24_I2C_SPEED	100000
+#define CONFIG_SYS_OMAP24_I2C_SLAVE	1
+#define CONFIG_SYS_I2C_OMAP34XX
 
 /*
  * TWL4030
@@ -159,13 +141,12 @@
  * Board NAND Info.
  */
 #define CONFIG_NAND_OMAP_GPMC
+#define CONFIG_SYS_NAND_BUSWIDTH_16BIT	16
 #define CONFIG_SYS_NAND_ADDR		NAND_BASE	/* physical address */
 							/* to access nand */
 #define CONFIG_SYS_NAND_BASE		NAND_BASE	/* physical address */
 							/* to access nand at */
 							/* CS0 */
-#define GPMC_NAND_ECC_LP_x16_LAYOUT
-
 #define CONFIG_SYS_MAX_NAND_DEVICE	1		/* Max number of NAND */
 
 #if defined(CONFIG_CMD_NET)
@@ -236,7 +217,6 @@
  */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser */
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_SYS_PROMPT		"DIG297# "
 #define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size */
 /* Print Buffer Size */
@@ -261,39 +241,19 @@
  */
 #define CONFIG_SYS_TIMERBASE		(OMAP34XX_GPT2)
 #define CONFIG_SYS_PTV			2       /* Divisor: 2^(PTV+1) => 8 */
-#define CONFIG_SYS_HZ			1000
-
-/*-----------------------------------------------------------------------
- * Stack sizes
- *
- * The stack sizes are set up in start.S using the settings below
- */
-#define CONFIG_STACKSIZE	(128 << 10)	/* regular stack 128 KiB */
-#ifdef CONFIG_USE_IRQ
-#define CONFIG_STACKSIZE_IRQ	(4 << 10)	/* IRQ stack 4 KiB */
-#define CONFIG_STACKSIZE_FIQ	(4 << 10)	/* FIQ stack 4 KiB */
-#endif
 
 /*-----------------------------------------------------------------------
  * Physical Memory Map
  */
 #define CONFIG_NR_DRAM_BANKS	2	/* CS1 may or may not be populated */
 #define PHYS_SDRAM_1		OMAP34XX_SDRC_CS0
-#define PHYS_SDRAM_1_SIZE	(32 << 20)	/* at least 32 MiB */
 #define PHYS_SDRAM_2		OMAP34XX_SDRC_CS1
-
-/* SDRAM Bank Allocation method */
-#define SDRC_R_B_C		1
 
 /*-----------------------------------------------------------------------
  * FLASH and environment organization
  */
 
 /* **** PISMO SUPPORT *** */
-
-/* Configure the PISMO */
-#define PISMO1_NAND_SIZE		GPMC_SIZE_128M
-
 #define CONFIG_SYS_MONITOR_LEN		(256 << 10)	/* Reserve 2 sectors */
 
 #define CONFIG_SYS_FLASH_BASE		boot_flash_base

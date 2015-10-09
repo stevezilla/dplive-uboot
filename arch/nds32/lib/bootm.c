@@ -3,20 +3,7 @@
  * Shawn Lin, Andes Technology Corporation <nobuhiro@andestech.com>
  * Macpaul Lin, Andes Technology Corporation <macpaul@andestech.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307	 USA
- *
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -58,6 +45,12 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 	char *commandline = getenv("bootargs");
 #endif
 
+	/*
+	 * allow the PREP bootm subcommand, it is required for bootm to work
+	 */
+	if (flag & BOOTM_STATE_OS_PREP)
+		return 0;
+
 	if ((flag != 0) && (flag != BOOTM_STATE_OS_GO))
 		return 1;
 
@@ -69,7 +62,7 @@ int do_bootm_linux(int flag, int argc, char *argv[], bootm_headers_t *images)
 		printf("Using machid 0x%x from environment\n", machid);
 	}
 
-	show_boot_progress(15);
+	bootstage_mark(BOOTSTAGE_ID_RUN_OS);
 
 	debug("## Transferring control to Linux (at address %08lx) ...\n",
 	       (ulong)theKernel);

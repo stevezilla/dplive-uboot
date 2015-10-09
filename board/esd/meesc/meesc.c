@@ -1,33 +1,18 @@
 /*
  * (C) Copyright 2007-2008
- * Stelian Pop <stelian.pop@leadtechdesign.com>
+ * Stelian Pop <stelian@popies.net>
  * Lead Tech Design <www.leadtechdesign.com>
  *
  * (C) Copyright 2009-2011
  * Daniel Gorsulowski <daniel.gorsulowski@esd.eu>
  * esd electronic system design gmbh <www.esd.eu>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
 #include <asm/io.h>
+#include <asm/gpio.h>
 #include <asm/arch/at91sam9_smc.h>
 #include <asm/arch/at91_common.h>
 #include <asm/arch/at91_pmc.h>
@@ -73,27 +58,27 @@ static void meesc_nand_hw_init(void)
 	writel(csa, &matrix->csa[0]);
 
 	/* Configure SMC CS3 for NAND/SmartMedia */
-	writel(AT91_SMC_SETUP_NWE(1) | AT91_SMC_SETUP_NCS_WR(0) |
-		AT91_SMC_SETUP_NRD(1) | AT91_SMC_SETUP_NCS_RD(0),
+	writel(AT91_SMC_SETUP_NWE(1) | AT91_SMC_SETUP_NCS_WR(1) |
+		AT91_SMC_SETUP_NRD(2) | AT91_SMC_SETUP_NCS_RD(2),
 		&smc->cs[3].setup);
 
 	writel(AT91_SMC_PULSE_NWE(3) | AT91_SMC_PULSE_NCS_WR(3) |
 		AT91_SMC_PULSE_NRD(3) | AT91_SMC_PULSE_NCS_RD(3),
 		&smc->cs[3].pulse);
 
-	writel(AT91_SMC_CYCLE_NWE(5) | AT91_SMC_CYCLE_NRD(5),
+	writel(AT91_SMC_CYCLE_NWE(6) | AT91_SMC_CYCLE_NRD(6),
 		&smc->cs[3].cycle);
 	writel(AT91_SMC_MODE_RM_NRD | AT91_SMC_MODE_WM_NWE |
 		AT91_SMC_MODE_EXNW_DISABLE |
 		AT91_SMC_MODE_DBW_8 |
-		AT91_SMC_MODE_TDF_CYCLE(3),
+		AT91_SMC_MODE_TDF_CYCLE(12),
 		&smc->cs[3].mode);
 
 	/* Configure RDY/BSY */
-	at91_set_pio_input(CONFIG_SYS_NAND_READY_PIN, 1);
+	gpio_direction_input(CONFIG_SYS_NAND_READY_PIN);
 
 	/* Enable NandFlash */
-	at91_set_pio_output(CONFIG_SYS_NAND_ENABLE_PIN, 1);
+	gpio_direction_output(CONFIG_SYS_NAND_ENABLE_PIN, 1);
 }
 #endif /* CONFIG_CMD_NAND */
 

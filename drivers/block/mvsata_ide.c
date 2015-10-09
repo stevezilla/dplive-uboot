@@ -3,23 +3,7 @@
  *
  * Written-by: Albert ARIBAUD <albert.u.boot@aribaud.net>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -28,7 +12,7 @@
 #if defined(CONFIG_ORION5X)
 #include <asm/arch/orion5x.h>
 #elif defined(CONFIG_KIRKWOOD)
-#include <asm/arch/kirkwood.h>
+#include <asm/arch/soc.h>
 #endif
 
 /* SATA port registers */
@@ -56,8 +40,8 @@ struct mvsata_port_registers {
  * Sanity checks:
  * - to compile at all, we need CONFIG_SYS_ATA_BASE_ADDR.
  * - for ide_preinit to make sense, we need at least one of
- *   CONFIG_SYS_ATA_IDE0_OFFSET or CONFIG_SYS_ATA_IDE0_OFFSET;
- * - for inde_preinit to be called, we need CONFIG_IDE_PREINIT.
+ *   CONFIG_SYS_ATA_IDE0_OFFSET or CONFIG_SYS_ATA_IDE1_OFFSET;
+ * - for ide_preinit to be called, we need CONFIG_IDE_PREINIT.
  * Fail with an explanation message if these conditions are not met.
  * This is particularly important for CONFIG_IDE_PREINIT, because
  * its lack would not cause a build error.
@@ -150,23 +134,25 @@ static int mvsata_ide_initialize_port(struct mvsata_port_registers *port)
 
 int ide_preinit(void)
 {
+	int ret = MVSATA_STATUS_TIMEOUT;
 	int status;
+
 	/* Enable ATA port 0 (could be SATA port 0 or 1) if declared */
 #if defined(CONFIG_SYS_ATA_IDE0_OFFSET)
 	status = mvsata_ide_initialize_port(
 		(struct mvsata_port_registers *)
 		(CONFIG_SYS_ATA_BASE_ADDR + CONFIG_SYS_ATA_IDE0_OFFSET));
-	if (status)
-		return status;
+	if (status == MVSATA_STATUS_OK)
+		ret = MVSATA_STATUS_OK;
 #endif
 	/* Enable ATA port 1 (could be SATA port 0 or 1) if declared */
 #if defined(CONFIG_SYS_ATA_IDE1_OFFSET)
 	status = mvsata_ide_initialize_port(
 		(struct mvsata_port_registers *)
 		(CONFIG_SYS_ATA_BASE_ADDR + CONFIG_SYS_ATA_IDE1_OFFSET));
-	if (status)
-		return status;
+	if (status == MVSATA_STATUS_OK)
+		ret = MVSATA_STATUS_OK;
 #endif
-	/* return success if all ports initializations succeeded */
-	return MVSATA_STATUS_OK;
+	/* Return success if at least one port initialization succeeded */
+	return ret;
 }

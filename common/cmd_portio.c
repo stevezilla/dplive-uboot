@@ -2,23 +2,7 @@
  * (C) Copyright 2003
  * Marc Singer, elf@buici.com
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -44,7 +28,7 @@ int do_portio_out (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	uint value = out_last_value;
 
 	if (argc != 3)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	if ((flag & CMD_FLAG_REPEAT) == 0) {
 		/*
@@ -102,7 +86,7 @@ int do_portio_in (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	uint size = in_last_size;
 
 	if (argc != 2)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	if ((flag & CMD_FLAG_REPEAT) == 0) {
 		/*

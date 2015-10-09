@@ -2,24 +2,7 @@
  * (C) Copyright 2001
  * Denis Peter, MPL AG Switzerland, d.peter@mpl.ch
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- *
+ * SPDX-License-Identifier:	GPL-2.0+
  *
  * TODO: clean-up
  */
@@ -35,9 +18,6 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 #undef SDRAM_DEBUG
-
-#define FALSE           0
-#define TRUE            1
 
 /* stdlib.h causes some compatibility problems; should fixe these! -- wd */
 #ifndef __ldiv_t_defined
@@ -212,7 +192,7 @@ int board_early_init_f (void)
 #endif
 
 	/* Read Serial Presence Detect Information */
-	i2c_init (CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
+	i2c_set_bus_num(0);
 	for (i = 0; i < 128; i++)
 		datain[i] = 127;
 	i2c_read(SPD_EEPROM_ADDRESS,0,1,datain,128);
@@ -566,7 +546,27 @@ int board_early_init_f (void)
 	return 0;
 }
 
+int board_early_init_r(void)
+{
+	int mode;
 
+	/*
+	 * since we are relocated, we can finally enable i-cache
+	 * and set up the flash CS correctly
+	 */
+	icache_enable();
+	setup_cs_reloc();
+	/* get and display boot mode */
+	mode = get_boot_mode();
+	if (mode & BOOT_PCI)
+		printf("PCI Boot %s Map\n", (mode & BOOT_MPS) ?
+			"MPS" : "Flash");
+	else
+		printf("%s Boot\n", (mode & BOOT_MPS) ?
+			"MPS" : "Flash");
+
+	return 0;
+}
 /* ------------------------------------------------------------------------- */
 
 /*
@@ -660,9 +660,6 @@ static int test_dram (unsigned long ramsize)
 	return (1);
 }
 
-
-extern flash_info_t flash_info[];	/* info for FLASH chips */
-
 int misc_init_r (void)
 {
 	/* adjust flash start and size as well as the offset */
@@ -683,7 +680,8 @@ int misc_init_r (void)
 
 int overwrite_console (void)
 {
-	return (in8 (CONFIG_PORT_ADDR) & 0x1);	/* return TRUE if console should be overwritten */
+	/* return true if console should be overwritten */
+	return in8(CONFIG_PORT_ADDR) & 0x1;
 }
 
 
@@ -928,7 +926,7 @@ void print_pip405_info (void)
 
 void user_led0 (unsigned char on)
 {
-	if (on == TRUE)
+	if (on == true)
 		out8 (PLD_LED_USER_REG, (in8 (PLD_LED_USER_REG) | 0x1));
 	else
 		out8 (PLD_LED_USER_REG, (in8 (PLD_LED_USER_REG) & 0xfe));
@@ -936,7 +934,7 @@ void user_led0 (unsigned char on)
 
 void user_led1 (unsigned char on)
 {
-	if (on == TRUE)
+	if (on == true)
 		out8 (PLD_LED_USER_REG, (in8 (PLD_LED_USER_REG) | 0x2));
 	else
 		out8 (PLD_LED_USER_REG, (in8 (PLD_LED_USER_REG) & 0xfd));

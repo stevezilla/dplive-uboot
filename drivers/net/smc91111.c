@@ -10,19 +10,7 @@
  .	 Developed by Simple Network Magic Corporation (SNMC)
  . Copyright (C) 1996 by Erik Stahlman (ES)
  .
- . This program is free software; you can redistribute it and/or modify
- . it under the terms of the GNU General Public License as published by
- . the Free Software Foundation; either version 2 of the License, or
- . (at your option) any later version.
- .
- . This program is distributed in the hope that it will be useful,
- . but WITHOUT ANY WARRANTY; without even the implied warranty of
- . MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- . GNU General Public License for more details.
- .
- . You should have received a copy of the GNU General Public License
- . along with this program; if not, write to the Free Software
- . Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307	 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  .
  . Information contained in this file was obtained from the LAN91C111
  . manual from SMC.  To get a copy, if you really want one, you can find
@@ -177,8 +165,6 @@ static void smc_phy_configure(struct eth_device *dev);
  * packets being corrupt (shifted) on the wire, etc.  Switching to the
  * inx,outx functions fixed this problem.
  */
-
-#define barrier() __asm__ __volatile__("": : :"memory")
 
 static inline word SMC_inw(struct eth_device *dev, dword offset)
 {
@@ -426,8 +412,7 @@ static void smc_halt(struct eth_device *dev)
  .	Enable the transmit interrupt, so I know if it failed
  .	Free the kernel data if I actually sent it.
 */
-static int smc_send(struct eth_device *dev, volatile void *packet,
-	int packet_length)
+static int smc_send(struct eth_device *dev, void *packet, int packet_length)
 {
 	byte packet_no;
 	byte *buf;
@@ -1169,17 +1154,6 @@ static void smc_write_phy_register (struct eth_device *dev, byte phyreg,
 
 
 /*------------------------------------------------------------
- . Waits the specified number of milliseconds - kernel friendly
- .-------------------------------------------------------------*/
-#ifndef CONFIG_SMC91111_EXT_PHY
-static void smc_wait_ms(unsigned int ms)
-{
-	udelay(ms*1000);
-}
-#endif /* !CONFIG_SMC91111_EXT_PHY */
-
-
-/*------------------------------------------------------------
  . Configures the specified PHY using Autonegotiation. Calls
  . smc_phy_fixed() if the user has requested a certain config.
  .-------------------------------------------------------------*/
@@ -1205,7 +1179,7 @@ static void smc_phy_configure (struct eth_device *dev)
 			break;
 		}
 
-		smc_wait_ms (500);	/* wait 500 millisecs */
+		mdelay(500);	/* wait 500 millisecs */
 	}
 
 	if (timeout < 1) {
@@ -1270,7 +1244,7 @@ static void smc_phy_configure (struct eth_device *dev)
 			break;
 		}
 
-		smc_wait_ms (500);	/* wait 500 millisecs */
+		mdelay(500);	/* wait 500 millisecs */
 
 		/* Restart auto-negotiation if remote fault */
 		if (status & PHY_STAT_REM_FLT) {

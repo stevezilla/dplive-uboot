@@ -6,23 +6,7 @@
  * (C) Copyright 2000-2004
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
- * MA 02110-1301 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -91,33 +75,33 @@ static void stamp_led_set(int LED1, int LED2, int LED3)
 void show_boot_progress(int status)
 {
 	switch (status) {
-	case 1:
+	case BOOTSTAGE_ID_CHECK_MAGIC:
 		stamp_led_set(STATUS_LED_OFF, STATUS_LED_OFF, STATUS_LED_ON);
 		break;
-	case 2:
+	case BOOTSTAGE_ID_CHECK_HEADER:
 		stamp_led_set(STATUS_LED_OFF, STATUS_LED_ON, STATUS_LED_OFF);
 		break;
-	case 3:
+	case BOOTSTAGE_ID_CHECK_CHECKSUM:
 		stamp_led_set(STATUS_LED_OFF, STATUS_LED_ON, STATUS_LED_ON);
 		break;
-	case 4:
+	case BOOTSTAGE_ID_CHECK_ARCH:
 		stamp_led_set(STATUS_LED_ON, STATUS_LED_OFF, STATUS_LED_OFF);
 		break;
-	case 5:
-	case 6:
+	case BOOTSTAGE_ID_CHECK_IMAGETYPE:
+	case BOOTSTAGE_ID_DECOMP_IMAGE:
 		stamp_led_set(STATUS_LED_ON, STATUS_LED_OFF, STATUS_LED_ON);
 		break;
-	case 7:
-	case 8:
+	case BOOTSTAGE_ID_KERNEL_LOADED:
+	case BOOTSTAGE_ID_CHECK_BOOT_OS:
 		stamp_led_set(STATUS_LED_ON, STATUS_LED_ON, STATUS_LED_OFF);
 		break;
-	case 9:
-	case 10:
-	case 11:
-	case 12:
-	case 13:
-	case 14:
-	case 15:
+	case BOOTSTAGE_ID_BOOT_OS_RETURNED:
+	case BOOTSTAGE_ID_RD_MAGIC:
+	case BOOTSTAGE_ID_RD_HDR_CHECKSUM:
+	case BOOTSTAGE_ID_RD_CHECKSUM:
+	case BOOTSTAGE_ID_RAMDISK:
+	case BOOTSTAGE_ID_NO_RAMDISK:
+	case BOOTSTAGE_ID_RUN_OS:
 		stamp_led_set(STATUS_LED_OFF, STATUS_LED_OFF, STATUS_LED_OFF);
 		break;
 	default:

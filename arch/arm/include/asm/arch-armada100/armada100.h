@@ -4,23 +4,7 @@
  * Written-by: Prafulla Wadaskar <prafulla@marvell.com>
  * Contributor: Mahavir Jain <mjain@marvell.com>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef _ASM_ARCH_ARMADA100_H
@@ -43,6 +27,14 @@
 #define SSP2_APBCLK		0x01
 #define SSP2_FNCLK		0x02
 
+/* USB Clock/reset control bits */
+#define USB_SPH_AXICLK_EN	0x10
+#define USB_SPH_AXI_RST		0x02
+
+/* MPMU Clocks */
+#define APB2_26M_EN		(1 << 20)
+#define AP_26M			(1 << 4)
+
 /* Register Base Addresses */
 #define ARMD1_DRAM_BASE		0xB0000000
 #define ARMD1_FEC_BASE		0xC0800000
@@ -60,6 +52,7 @@
 #define ARMD1_SSP5_BASE		0xD4021000
 #define ARMD1_UART3_BASE	0xD4026000
 #define ARMD1_MPMU_BASE		0xD4050000
+#define ARMD1_USB_HOST_BASE	0xD4209000
 #define ARMD1_APMU_BASE		0xD4282800
 #define ARMD1_CPU_BASE		0xD4282C00
 

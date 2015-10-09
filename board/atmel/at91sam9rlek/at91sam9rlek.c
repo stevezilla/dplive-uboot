@@ -1,25 +1,9 @@
 /*
  * (C) Copyright 2007-2008
- * Stelian Pop <stelian.pop@leadtechdesign.com>
+ * Stelian Pop <stelian@popies.net>
  * Lead Tech Design <www.leadtechdesign.com>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -35,6 +19,7 @@
 
 #include <lcd.h>
 #include <atmel_lcdc.h>
+#include <atmel_mci.h>
 #if defined(CONFIG_RESET_PHY_R) && defined(CONFIG_MACB)
 #include <net.h>
 #endif
@@ -94,20 +79,20 @@ static void at91sam9rlek_nand_hw_init(void)
 
 #ifdef CONFIG_LCD
 vidinfo_t panel_info = {
-	vl_col:		240,
-	vl_row:		320,
-	vl_clk:		4965000,
-	vl_sync:	ATMEL_LCDC_INVLINE_INVERTED |
-			ATMEL_LCDC_INVFRAME_INVERTED,
-	vl_bpix:	3,
-	vl_tft:		1,
-	vl_hsync_len:	5,
-	vl_left_margin:	1,
-	vl_right_margin:33,
-	vl_vsync_len:	1,
-	vl_upper_margin:1,
-	vl_lower_margin:0,
-	mmio:		ATMEL_BASE_LCDC,
+	.vl_col =		240,
+	.vl_row =		320,
+	.vl_clk =		4965000,
+	.vl_sync =		ATMEL_LCDC_INVLINE_INVERTED |
+				ATMEL_LCDC_INVFRAME_INVERTED,
+	.vl_bpix =		3,
+	.vl_tft =		1,
+	.vl_hsync_len =		5,
+	.vl_left_margin =	1,
+	.vl_right_margin =	33,
+	.vl_vsync_len =		1,
+	.vl_upper_margin =	1,
+	.vl_lower_margin =	0,
+	.mmio =			ATMEL_BASE_LCDC,
 };
 
 void lcd_enable(void)
@@ -178,6 +163,15 @@ void lcd_show_board_info(void)
 #endif /* CONFIG_LCD_INFO */
 #endif
 
+#ifdef CONFIG_GENERIC_ATMEL_MCI
+int board_mmc_init(bd_t *bis)
+{
+	at91_mci_hw_init();
+
+	return atmel_mci_init((void *)ATMEL_BASE_MCI);
+}
+#endif
+
 int board_early_init_f(void)
 {
 	struct at91_pmc *pmc = (struct at91_pmc *)ATMEL_BASE_PMC;
@@ -192,9 +186,6 @@ int board_early_init_f(void)
 
 int board_init(void)
 {
-	/* Enable Ctrlc */
-	console_init_f();
-
 	/* arch number of AT91SAM9RLEK-Board */
 	gd->bd->bi_arch_number = MACH_TYPE_AT91SAM9RLEK;
 	/* adress of boot parameters */

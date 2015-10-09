@@ -1,22 +1,7 @@
 /*
  * Copyright (c) 2011 The Chromium OS Authors.
- * See file CREDITS for list of people who contributed to this
- * project.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -43,6 +28,20 @@ static const struct usb_eth_prob_dev prob_dev[] = {
 		.before_probe = asix_eth_before_probe,
 		.probe = asix_eth_probe,
 		.get_info = asix_eth_get_info,
+	},
+#endif
+#ifdef CONFIG_USB_ETHER_ASIX88179
+	{
+		.before_probe = ax88179_eth_before_probe,
+		.probe = ax88179_eth_probe,
+		.get_info = ax88179_eth_get_info,
+	},
+#endif
+#ifdef CONFIG_USB_ETHER_MCS7830
+	{
+		.before_probe = mcs7830_eth_before_probe,
+		.probe = mcs7830_eth_probe,
+		.get_info = mcs7830_eth_get_info,
 	},
 #endif
 #ifdef CONFIG_USB_ETHER_SMSC95XX
@@ -123,12 +122,15 @@ int usb_host_eth_scan(int mode)
 
 
 	if (mode == 1)
-		printf("       scanning bus for ethernet devices... ");
+		printf("       scanning usb for ethernet devices... ");
 
 	old_async = usb_disable_asynch(1); /* asynch transfer not allowed */
 
-	for (i = 0; i < USB_MAX_ETH_DEV; i++)
-		memset(&usb_eth[i], 0, sizeof(usb_eth[i]));
+	/* unregister a previously detected device */
+	for (i = 0; i < usb_max_eth_dev; i++)
+		eth_unregister(&usb_eth[i].eth_dev);
+
+	memset(usb_eth, 0, sizeof(usb_eth));
 
 	for (i = 0; prob_dev[i].probe; i++) {
 		if (prob_dev[i].before_probe)
@@ -140,7 +142,7 @@ int usb_host_eth_scan(int mode)
 		dev = usb_get_dev_index(i); /* get device */
 		debug("i=%d\n", i);
 		if (dev == NULL)
-			break; /* no more devices avaiable */
+			break; /* no more devices available */
 
 		/* find valid usb_ether driver for this device, if any */
 		probe_valid_drivers(dev);

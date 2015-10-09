@@ -2,23 +2,7 @@
  * (C) Copyright 2002
  * Daniel Engström, Omicron Ceti AB, <daniel@omicron.se>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -28,8 +12,9 @@
 #include <common.h>
 #include <asm/io.h>
 #include <pci.h>
+#include <asm/pci.h>
 
-#define cfg_read(val, addr, op)	*val = op((int)(addr))
+#define cfg_read(val, addr, op)		(*val = op((int)(addr)))
 #define cfg_write(val, addr, op)	op((val), (int)(addr))
 
 #define TYPE1_PCI_OP(rw, size, type, op, mask)				\
@@ -37,11 +22,10 @@ static int								\
 type1_##rw##_config_##size(struct pci_controller *hose,			\
 			      pci_dev_t dev, int offset, type val)	\
 {									\
-	outl(dev | (offset & 0xfc) | 0x80000000, (int)hose->cfg_addr);	\
+	outl(dev | (offset & 0xfc) | PCI_CFG_EN, (int)hose->cfg_addr);	\
 	cfg_##rw(val, hose->cfg_data + (offset & mask), op);		\
 	return 0;							\
 }
-
 
 TYPE1_PCI_OP(read, byte, u8 *, inb, 3)
 TYPE1_PCI_OP(read, word, u16 *, inw, 2)
@@ -51,7 +35,7 @@ TYPE1_PCI_OP(write, byte, u8, outb, 3)
 TYPE1_PCI_OP(write, word, u16, outw, 2)
 TYPE1_PCI_OP(write, dword, u32, outl, 0)
 
-void pci_setup_type1(struct pci_controller* hose, u32 cfg_addr, u32 cfg_data)
+void pci_setup_type1(struct pci_controller *hose)
 {
 	pci_set_ops(hose,
 		    type1_read_config_byte,
@@ -61,6 +45,6 @@ void pci_setup_type1(struct pci_controller* hose, u32 cfg_addr, u32 cfg_data)
 		    type1_write_config_word,
 		    type1_write_config_dword);
 
-	hose->cfg_addr = (unsigned int *) cfg_addr;
-	hose->cfg_data = (unsigned char *) cfg_data;
+	hose->cfg_addr = (unsigned int *)PCI_REG_ADDR;
+	hose->cfg_data = (unsigned char *)PCI_REG_DATA;
 }

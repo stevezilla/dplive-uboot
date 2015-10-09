@@ -2,23 +2,7 @@
  * (C) Copyright 2000
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -289,7 +273,7 @@ flash_fill_sect_ranges (ulong addr_first, ulong addr_last,
 }
 #endif /* CONFIG_SYS_NO_FLASH */
 
-int do_flinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_flinfo(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #ifndef CONFIG_SYS_NO_FLASH
 	ulong bank;
@@ -321,7 +305,7 @@ int do_flinfo ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	return 0;
 }
 
-int do_flerase (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_flerase(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 #ifndef CONFIG_SYS_NO_FLASH
 	flash_info_t *info = NULL;
@@ -335,7 +319,7 @@ int do_flerase (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	int rcode = 0;
 
 	if (argc < 2)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	if (strcmp(argv[1], "all") == 0) {
 		for (bank=1; bank<=CONFIG_SYS_MAX_FLASH_BANKS; ++bank) {
@@ -384,7 +368,7 @@ int do_flerase (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 
 	if (argc != 3)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	if (strcmp(argv[1], "bank") == 0) {
 		bank = simple_strtoul(argv[2], NULL, 16);
@@ -405,7 +389,7 @@ int do_flerase (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	if (addr_first >= addr_last)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	rcode = flash_sect_erase(addr_first, addr_last);
 	return rcode;
@@ -443,7 +427,8 @@ int flash_sect_erase (ulong addr_first, ulong addr_last)
 				rcode = flash_erase (info, s_first[bank], s_last[bank]);
 			}
 		}
-		printf ("Erased %d sectors\n", erased);
+		if (rcode == 0)
+			printf("Erased %d sectors\n", erased);
 	} else if (rcode == 0) {
 		puts ("Error: start and/or end address"
 			" not on sector boundary\n");
@@ -453,7 +438,7 @@ int flash_sect_erase (ulong addr_first, ulong addr_last)
 }
 #endif /* CONFIG_SYS_NO_FLASH */
 
-int do_protect (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+static int do_protect(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int rcode = 0;
 #ifndef CONFIG_SYS_NO_FLASH
@@ -475,7 +460,7 @@ int do_protect (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 
 	if (argc < 3)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 #if !defined(CONFIG_SYS_NO_FLASH) || defined(CONFIG_HAS_DATAFLASH)
 	if (strcmp(argv[1], "off") == 0)
@@ -483,7 +468,7 @@ int do_protect (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	else if (strcmp(argv[1], "on") == 0)
 		p = 1;
 	else
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 #endif
 
 #ifdef CONFIG_HAS_DATAFLASH
@@ -583,7 +568,7 @@ int do_protect (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 
 	if (argc != 4)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	if (strcmp(argv[2], "bank") == 0) {
 		bank = simple_strtoul(argv[3], NULL, 16);
@@ -623,7 +608,7 @@ int do_protect (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	}
 
 	if (addr_first >= addr_last)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	rcode = flash_sect_protect (p, addr_first, addr_last);
 #endif /* CONFIG_SYS_NO_FLASH */

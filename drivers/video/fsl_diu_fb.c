@@ -5,23 +5,7 @@
  *
  * FSL DIU Framebuffer driver
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -102,6 +86,38 @@ static struct fb_videomode fsl_diu_mode_1280_1024 = {
 	.lower_margin	= 7,
 	.hsync_len	= 216,
 	.vsync_len	= 37,
+	.sync		= FB_SYNC_COMP_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+	.vmode		= FB_VMODE_NONINTERLACED
+};
+
+static struct fb_videomode fsl_diu_mode_1280_720 = {
+	.name		= "1280x720-60",
+	.refresh	= 60,
+	.xres		= 1280,
+	.yres		= 720,
+	.pixclock	= 13426,
+	.left_margin	= 192,
+	.right_margin	= 64,
+	.upper_margin	= 22,
+	.lower_margin	= 1,
+	.hsync_len	= 136,
+	.vsync_len	= 3,
+	.sync		= FB_SYNC_COMP_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
+	.vmode		= FB_VMODE_NONINTERLACED
+};
+
+static struct fb_videomode fsl_diu_mode_1920_1080 = {
+	.name		= "1920x1080-60",
+	.refresh	= 60,
+	.xres		= 1920,
+	.yres		= 1080,
+	.pixclock	= 5787,
+	.left_margin	= 328,
+	.right_margin	= 120,
+	.upper_margin	= 34,
+	.lower_margin	= 1,
+	.hsync_len	= 208,
+	.vsync_len	= 3,
 	.sync		= FB_SYNC_COMP_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 	.vmode		= FB_VMODE_NONINTERLACED
 };
@@ -239,7 +255,6 @@ int fsl_diu_init(u16 xres, u16 yres, u32 pixel_format, int gamma_fix)
 	struct diu *hw = (struct diu *)CONFIG_SYS_DIU_ADDR;
 	u8 *gamma_table_base;
 	unsigned int i, j;
-	struct diu_ad *dummy_ad;
 	struct diu_addr gamma;
 	struct diu_addr cursor;
 
@@ -259,18 +274,16 @@ int fsl_diu_init(u16 xres, u16 yres, u32 pixel_format, int gamma_fix)
 	case RESOLUTION(1280, 1024):
 		fsl_diu_mode_db = &fsl_diu_mode_1280_1024;
 		break;
+	case RESOLUTION(1280, 720):
+		fsl_diu_mode_db = &fsl_diu_mode_1280_720;
+		break;
+	case RESOLUTION(1920, 1080):
+		fsl_diu_mode_db = &fsl_diu_mode_1920_1080;
+		break;
 	default:
 		printf("DIU:   Unsupported resolution %ux%u\n", xres, yres);
 		return -1;
 	}
-
-	/* The AD struct for the dummy framebuffer and the FB itself */
-	dummy_ad = allocate_fb(2, 4, 4, NULL);
-	if (!dummy_ad) {
-		printf("DIU:   Out of memory\n");
-		return -1;
-	}
-	dummy_ad->pix_fmt = 0x88883316;
 
 	/* read mode info */
 	info.var.xres = fsl_diu_mode_db->xres;
@@ -338,10 +351,7 @@ int fsl_diu_init(u16 xres, u16 yres, u32 pixel_format, int gamma_fix)
 	out_be32(&hw->gamma, gamma.paddr);
 	out_be32(&hw->cursor, cursor.paddr);
 	out_be32(&hw->bgnd, 0x007F7F7F);
-	out_be32(&hw->bgnd_wb, 0);
 	out_be32(&hw->disp_size, info.var.yres << 16 | info.var.xres);
-	out_be32(&hw->wb_size, 0);
-	out_be32(&hw->wb_mem_addr, 0);
 	out_be32(&hw->hsyn_para, info.var.left_margin << 22 |
 			info.var.hsync_len << 11 |
 			info.var.right_margin);
@@ -350,18 +360,13 @@ int fsl_diu_init(u16 xres, u16 yres, u32 pixel_format, int gamma_fix)
 			info.var.vsync_len << 11 |
 			info.var.lower_margin);
 
-	out_be32(&hw->syn_pol, 0);
-	out_be32(&hw->thresholds, 0x00037800);
-	out_be32(&hw->int_status, 0);
-	out_be32(&hw->int_mask, 0);
-	out_be32(&hw->plut, 0x01F5F666);
 	/* Pixel Clock configuration */
 	diu_set_pixel_clock(info.var.pixclock);
 
 	/* Set the frame buffers */
 	out_be32(&hw->desc[0], virt_to_phys(ad));
-	out_be32(&hw->desc[1], virt_to_phys(dummy_ad));
-	out_be32(&hw->desc[2], virt_to_phys(dummy_ad));
+	out_be32(&hw->desc[1], 0);
+	out_be32(&hw->desc[2], 0);
 
 	/* Enable the DIU, set display to all three planes */
 	out_be32(&hw->diu_mode, 1);

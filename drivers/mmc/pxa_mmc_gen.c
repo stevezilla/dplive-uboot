@@ -3,20 +3,7 @@
  *
  * Loosely based on the old code and Linux's PXA MMC driver
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <config.h>
@@ -30,12 +17,12 @@
 #include <asm/io.h>
 
 /* PXAMMC Generic default config for various CPUs */
-#if defined(CONFIG_PXA250)
+#if defined(CONFIG_CPU_PXA25X)
 #define PXAMMC_FIFO_SIZE	1
 #define PXAMMC_MIN_SPEED	312500
 #define PXAMMC_MAX_SPEED	20000000
 #define PXAMMC_HOST_CAPS	(0)
-#elif defined(CONFIG_PXA27X)
+#elif defined(CONFIG_CPU_PXA27X)
 #define PXAMMC_CRC_SKIP
 #define PXAMMC_FIFO_SIZE	32
 #define PXAMMC_MIN_SPEED	304000
@@ -65,7 +52,7 @@ struct pxa_mmc_priv {
 /* Wait for bit to be set */
 static int pxa_mmc_wait(struct mmc *mmc, uint32_t mask)
 {
-	struct pxa_mmc_priv *priv = (struct pxa_mmc_priv *)mmc->priv;
+	struct pxa_mmc_priv *priv = mmc->priv;
 	struct pxa_mmc_regs *regs = priv->regs;
 	unsigned int timeout = PXA_MMC_TIMEOUT;
 
@@ -84,7 +71,7 @@ static int pxa_mmc_wait(struct mmc *mmc, uint32_t mask)
 
 static int pxa_mmc_stop_clock(struct mmc *mmc)
 {
-	struct pxa_mmc_priv *priv = (struct pxa_mmc_priv *)mmc->priv;
+	struct pxa_mmc_priv *priv = mmc->priv;
 	struct pxa_mmc_regs *regs = priv->regs;
 	unsigned int timeout = PXA_MMC_TIMEOUT;
 
@@ -113,12 +100,12 @@ static int pxa_mmc_stop_clock(struct mmc *mmc)
 static int pxa_mmc_start_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 				uint32_t cmdat)
 {
-	struct pxa_mmc_priv *priv = (struct pxa_mmc_priv *)mmc->priv;
+	struct pxa_mmc_priv *priv = mmc->priv;
 	struct pxa_mmc_regs *regs = priv->regs;
 	int ret;
 
 	/* The card can send a "busy" response */
-	if (cmd->flags & MMC_RSP_BUSY)
+	if (cmd->resp_type & MMC_RSP_BUSY)
 		cmdat |= MMC_CMDAT_BUSY;
 
 	/* Inform the controller about response type */
@@ -156,7 +143,7 @@ static int pxa_mmc_start_cmd(struct mmc *mmc, struct mmc_cmd *cmd,
 
 static int pxa_mmc_cmd_done(struct mmc *mmc, struct mmc_cmd *cmd)
 {
-	struct pxa_mmc_priv *priv = (struct pxa_mmc_priv *)mmc->priv;
+	struct pxa_mmc_priv *priv = mmc->priv;
 	struct pxa_mmc_regs *regs = priv->regs;
 	uint32_t a, b, c;
 	int i;
@@ -181,9 +168,11 @@ static int pxa_mmc_cmd_done(struct mmc *mmc, struct mmc_cmd *cmd)
 	/* The command response didn't arrive */
 	if (stat & MMC_STAT_TIME_OUT_RESPONSE)
 		return -ETIMEDOUT;
-	else if (stat & MMC_STAT_RES_CRC_ERROR && cmd->flags & MMC_RSP_CRC) {
+	else if (stat & MMC_STAT_RES_CRC_ERROR
+			&& cmd->resp_type & MMC_RSP_CRC) {
 #ifdef	PXAMMC_CRC_SKIP
-		if (cmd->flags & MMC_RSP_136 && cmd->response[0] & (1 << 31))
+		if (cmd->resp_type & MMC_RSP_136
+				&& cmd->response[0] & (1 << 31))
 			printf("Ignoring CRC, this may be dangerous!\n");
 		else
 #endif
@@ -196,7 +185,7 @@ static int pxa_mmc_cmd_done(struct mmc *mmc, struct mmc_cmd *cmd)
 
 static int pxa_mmc_do_read_xfer(struct mmc *mmc, struct mmc_data *data)
 {
-	struct pxa_mmc_priv *priv = (struct pxa_mmc_priv *)mmc->priv;
+	struct pxa_mmc_priv *priv = mmc->priv;
 	struct pxa_mmc_regs *regs = priv->regs;
 	uint32_t len;
 	uint32_t *buf = (uint32_t *)data->dest;
@@ -208,7 +197,7 @@ static int pxa_mmc_do_read_xfer(struct mmc *mmc, struct mmc_data *data)
 	while (len) {
 		/* The controller has data ready */
 		if (readl(&regs->i_reg) & MMC_I_REG_RXFIFO_RD_REQ) {
-			size = min(len, PXAMMC_FIFO_SIZE);
+			size = min(len, (uint32_t)PXAMMC_FIFO_SIZE);
 			len -= size;
 			size /= 4;
 
@@ -232,7 +221,7 @@ static int pxa_mmc_do_read_xfer(struct mmc *mmc, struct mmc_data *data)
 
 static int pxa_mmc_do_write_xfer(struct mmc *mmc, struct mmc_data *data)
 {
-	struct pxa_mmc_priv *priv = (struct pxa_mmc_priv *)mmc->priv;
+	struct pxa_mmc_priv *priv = mmc->priv;
 	struct pxa_mmc_regs *regs = priv->regs;
 	uint32_t len;
 	uint32_t *buf = (uint32_t *)data->src;
@@ -244,14 +233,14 @@ static int pxa_mmc_do_write_xfer(struct mmc *mmc, struct mmc_data *data)
 	while (len) {
 		/* The controller is ready to receive data */
 		if (readl(&regs->i_reg) & MMC_I_REG_TXFIFO_WR_REQ) {
-			size = min(len, PXAMMC_FIFO_SIZE);
+			size = min(len, (uint32_t)PXAMMC_FIFO_SIZE);
 			len -= size;
 			size /= 4;
 
 			while (size--)
 				writel(*buf++, &regs->txfifo);
 
-			if (min(len, PXAMMC_FIFO_SIZE) < 32)
+			if (min(len, (uint32_t)PXAMMC_FIFO_SIZE) < 32)
 				writel(MMC_PRTBUF_BUF_PART_FULL, &regs->prtbuf);
 		}
 
@@ -275,7 +264,7 @@ static int pxa_mmc_do_write_xfer(struct mmc *mmc, struct mmc_data *data)
 static int pxa_mmc_request(struct mmc *mmc, struct mmc_cmd *cmd,
 				struct mmc_data *data)
 {
-	struct pxa_mmc_priv *priv = (struct pxa_mmc_priv *)mmc->priv;
+	struct pxa_mmc_priv *priv = mmc->priv;
 	struct pxa_mmc_regs *regs = priv->regs;
 	uint32_t cmdat = 0;
 	int ret;
@@ -328,7 +317,7 @@ static int pxa_mmc_request(struct mmc *mmc, struct mmc_cmd *cmd,
 
 static void pxa_mmc_set_ios(struct mmc *mmc)
 {
-	struct pxa_mmc_priv *priv = (struct pxa_mmc_priv *)mmc->priv;
+	struct pxa_mmc_priv *priv = mmc->priv;
 	struct pxa_mmc_regs *regs = priv->regs;
 	uint32_t tmp;
 	uint32_t pxa_mmc_clock;
@@ -346,7 +335,7 @@ static void pxa_mmc_set_ios(struct mmc *mmc)
 
 	/* Set clock to the card the usual way. */
 	pxa_mmc_clock = 0;
-	tmp = mmc->f_max / mmc->clock;
+	tmp = mmc->cfg->f_max / mmc->clock;
 	tmp += tmp % 2;
 
 	while (tmp > 1) {
@@ -359,7 +348,7 @@ static void pxa_mmc_set_ios(struct mmc *mmc)
 
 static int pxa_mmc_init(struct mmc *mmc)
 {
-	struct pxa_mmc_priv *priv = (struct pxa_mmc_priv *)mmc->priv;
+	struct pxa_mmc_priv *priv = mmc->priv;
 	struct pxa_mmc_regs *regs = priv->regs;
 
 	/* Make sure the clock are stopped */
@@ -377,6 +366,22 @@ static int pxa_mmc_init(struct mmc *mmc)
 	return 0;
 }
 
+static const struct mmc_ops pxa_mmc_ops = {
+	.send_cmd	= pxa_mmc_request,
+	.set_ios	= pxa_mmc_set_ios,
+	.init		= pxa_mmc_init,
+};
+
+static struct mmc_config pxa_mmc_cfg = {
+	.name		= "PXA MMC",
+	.ops		= &pxa_mmc_ops,
+	.voltages	= MMC_VDD_32_33 | MMC_VDD_33_34,
+	.f_max		= PXAMMC_MAX_SPEED,
+	.f_min		= PXAMMC_MIN_SPEED,
+	.host_caps	= PXAMMC_HOST_CAPS,
+	.b_max		= CONFIG_SYS_MMC_MAX_BLK_COUNT,
+};
+
 int pxa_mmc_register(int card_index)
 {
 	struct mmc *mmc;
@@ -384,13 +389,11 @@ int pxa_mmc_register(int card_index)
 	uint32_t reg;
 	int ret = -ENOMEM;
 
-	mmc = malloc(sizeof(struct mmc));
-	if (!mmc)
-		goto err0;
-
 	priv = malloc(sizeof(struct pxa_mmc_priv));
 	if (!priv)
-		goto err1;
+		goto err0;
+
+	memset(priv, 0, sizeof(*priv));
 
 	switch (card_index) {
 	case 0:
@@ -400,24 +403,11 @@ int pxa_mmc_register(int card_index)
 		priv->regs = (struct pxa_mmc_regs *)MMC1_BASE;
 		break;
 	default:
+		ret = -EINVAL;
 		printf("PXA MMC: Invalid MMC controller ID (card_index = %d)\n",
 			card_index);
-		goto err2;
+		goto err1;
 	}
-
-	mmc->priv = priv;
-
-	sprintf(mmc->name, "PXA MMC");
-	mmc->send_cmd	= pxa_mmc_request;
-	mmc->set_ios	= pxa_mmc_set_ios;
-	mmc->init	= pxa_mmc_init;
-
-	mmc->voltages	= MMC_VDD_32_33 | MMC_VDD_33_34;
-	mmc->f_max	= PXAMMC_MAX_SPEED;
-	mmc->f_min	= PXAMMC_MIN_SPEED;
-	mmc->host_caps	= PXAMMC_HOST_CAPS;
-
-	mmc->b_max = 0;
 
 #ifndef	CONFIG_CPU_MONAHANS	/* PXA2xx */
 	reg = readl(CKEN);
@@ -429,14 +419,14 @@ int pxa_mmc_register(int card_index)
 	writel(reg, CKENA);
 #endif
 
-	mmc_register(mmc);
+	mmc = mmc_create(&pxa_mmc_cfg, priv);
+	if (mmc == NULL)
+		goto err1;
 
 	return 0;
 
-err2:
-	free(priv);
 err1:
-	free(mmc);
+	free(priv);
 err0:
 	return ret;
 }

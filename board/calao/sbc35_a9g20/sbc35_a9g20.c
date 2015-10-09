@@ -1,28 +1,12 @@
 /*
  * (C) Copyright 2007-2008
- * Stelian Pop <stelian.pop@leadtechdesign.com>
+ * Stelian Pop <stelian@popies.net>
  * Lead Tech Design <www.leadtechdesign.com>
  *
  * Copyright (C) 2009
  * Albin Tonnerre, Free-Electrons <albin.tonnerre@free-electrons.com>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -31,7 +15,6 @@
 #include <asm/arch/at91sam9_smc.h>
 #include <asm/arch/at91_common.h>
 #include <asm/arch/at91_pmc.h>
-#include <asm/arch/at91_rstc.h>
 #include <asm/arch/gpio.h>
 
 #if defined(CONFIG_RESET_PHY_R) && defined(CONFIG_MACB)
@@ -93,8 +76,6 @@ static void sbc35_a9g20_macb_hw_init(void)
 {
 	struct at91_pmc *pmc = (struct at91_pmc *)ATMEL_BASE_PMC;
 	struct at91_port *pioa = (struct at91_port *)ATMEL_BASE_PIOA;
-	struct at91_rstc *rstc = (struct at91_rstc *)ATMEL_BASE_RSTC;
-	unsigned long erstl;
 
 	/* Enable EMAC clock */
 	writel(1 << ATMEL_ID_EMAC0, &pmc->pcer);
@@ -118,21 +99,7 @@ static void sbc35_a9g20_macb_hw_init(void)
 	       pin_to_mask(AT91_PIN_PA28),
 	       &pioa->pudr);
 
-	erstl = readl(&rstc->mr) & AT91_RSTC_MR_ERSTL_MASK;
-
-	/* Need to reset PHY -> 500ms reset */
-	writel(AT91_RSTC_KEY | AT91_RSTC_MR_ERSTL(13) |
-		AT91_RSTC_MR_URSTEN, &rstc->mr);
-
-	writel(AT91_RSTC_KEY | AT91_RSTC_CR_EXTRST, &rstc->cr);
-
-	/* Wait for end hardware reset */
-	while (!(readl(&rstc->sr) & AT91_RSTC_SR_NRSTL))
-		;
-
-	/* Restore NRST value */
-	writel(AT91_RSTC_KEY | erstl | AT91_RSTC_MR_URSTEN,
-		&rstc->mr);
+	at91_phy_reset();
 
 	/* Re-enable pull-up */
 	writel(pin_to_mask(AT91_PIN_PA14) |
@@ -149,10 +116,6 @@ static void sbc35_a9g20_macb_hw_init(void)
 
 int board_init(void)
 {
-	/* Enable Ctrlc */
-	console_init_f();
-
-	gd->bd->bi_arch_number = MACH_TYPE_SBC35_A9G20;
 	/* adress of boot parameters */
 	gd->bd->bi_boot_params = CONFIG_SYS_SDRAM_BASE + 0x100;
 

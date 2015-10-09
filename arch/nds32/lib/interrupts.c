@@ -7,23 +7,7 @@
  * Shawn Lin, Andes Technology Corporation <nobuhiro@andestech.com>
  * Macpaul Lin, Andes Technology Corporation <macpaul@andestech.com>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -59,7 +43,7 @@ void enable_interrupts(void)
 
 /*
  * disable interrupts
- * Return TRUE if GIE is enabled before we disable it.
+ * Return true if GIE is enabled before we disable it.
  */
 int disable_interrupts(void)
 {
@@ -91,7 +75,7 @@ void show_regs(struct pt_regs *regs)
 	printf("D1H: %08lx  D1L: %08lx  D0H: %08lx  D0L: %08lx\n",
 		regs->d1hi, regs->d1lo, regs->d0hi, regs->d0lo);
 	printf("r27: %08lx  r26: %08lx  r25: %08lx  r24: %08lx\n",
-		regs->r[27], regs->r[26], regs->r[25], regs->r[24]);
+		regs->p1, regs->p0, regs->r[25], regs->r[24]);
 	printf("r23: %08lx  r22: %08lx  r21: %08lx  r20: %08lx\n",
 		regs->r[23], regs->r[22], regs->r[21], regs->r[20]);
 	printf("r19: %08lx  r18: %08lx  r17: %08lx  r16: %08lx\n",

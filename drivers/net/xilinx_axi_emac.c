@@ -3,23 +3,7 @@
  * Copyright (C) 2011 PetaLogix
  * Copyright (C) 2010 Xilinx, Inc. All rights reserved.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <config.h>
@@ -272,7 +256,15 @@ static int setup_phy(struct eth_device *dev)
 	phydev->advertising = phydev->supported;
 	priv->phydev = phydev;
 	phy_config(phydev);
-	phy_startup(phydev);
+	if (phy_startup(phydev)) {
+		printf("axiemac: could not initialize PHY %s\n",
+		       phydev->dev->name);
+		return 0;
+	}
+	if (!phydev->link) {
+		printf("%s: No link.\n", phydev->dev->name);
+		return 0;
+	}
 
 	switch (phydev->speed) {
 	case 1000:
@@ -468,7 +460,7 @@ static int axiemac_init(struct eth_device *dev, bd_t * bis)
 	return 0;
 }
 
-static int axiemac_send(struct eth_device *dev, volatile void *ptr, int len)
+static int axiemac_send(struct eth_device *dev, void *ptr, int len)
 {
 	struct axidma_priv *priv = dev->priv;
 	u32 timeout;

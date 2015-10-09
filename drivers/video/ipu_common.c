@@ -6,25 +6,9 @@
  *
  * Linux IPU driver for MX51:
  *
- * (C) Copyright 2005-2010 Freescale Semiconductor, Inc.
+ * (C) Copyright 2005-2015 Freescale Semiconductor, Inc.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /* #define DEBUG */
@@ -35,6 +19,7 @@
 #include <asm/errno.h>
 #include <asm/arch/imx-regs.h>
 #include <asm/arch/crm_regs.h>
+#include <div64.h>
 #include "ipu.h"
 #include "ipu_regs.h"
 
@@ -94,6 +79,7 @@ struct ipu_ch_param {
 	temp1; \
 })
 
+#define IPU_SW_RST_TOUT_USEC	(10000)
 
 void clk_enable(struct clk *clk)
 {
@@ -169,6 +155,7 @@ static int clk_ipu_enable(struct clk *clk)
 	reg |= MXC_CCM_CCGR_CG_MASK << clk->enable_shift;
 	__raw_writel(reg, clk->enable_reg);
 
+#if defined(CONFIG_MX51) || defined(CONFIG_MX53)
 	/* Handshake with IPU when certain clock rates are changed. */
 	reg = __raw_readl(&mxc_ccm->ccdr);
 	reg &= ~MXC_CCM_CCDR_IPU_HS_MASK;
@@ -178,7 +165,7 @@ static int clk_ipu_enable(struct clk *clk)
 	reg = __raw_readl(&mxc_ccm->clpcr);
 	reg &= ~MXC_CCM_CLPCR_BYPASS_IPU_LPM_HS;
 	__raw_writel(reg, &mxc_ccm->clpcr);
-
+#endif
 	return 0;
 }
 
@@ -190,6 +177,7 @@ static void clk_ipu_disable(struct clk *clk)
 	reg &= ~(MXC_CCM_CCGR_CG_MASK << clk->enable_shift);
 	__raw_writel(reg, clk->enable_reg);
 
+#if defined(CONFIG_MX51) || defined(CONFIG_MX53)
 	/*
 	 * No handshake with IPU whe dividers are changed
 	 * as its not enabled.
@@ -202,22 +190,90 @@ static void clk_ipu_disable(struct clk *clk)
 	reg = __raw_readl(&mxc_ccm->clpcr);
 	reg |= MXC_CCM_CLPCR_BYPASS_IPU_LPM_HS;
 	__raw_writel(reg, &mxc_ccm->clpcr);
+#endif
 }
 
 
 static struct clk ipu_clk = {
 	.name = "ipu_clk",
-	.rate = 133000000,
-	.enable_reg = (u32 *)(MXC_CCM_BASE +
+	.rate = CONFIG_IPUV3_CLK,
+#if defined(CONFIG_MX51) || defined(CONFIG_MX53)
+	.enable_reg = (u32 *)(CCM_BASE_ADDR +
 		offsetof(struct mxc_ccm_reg, CCGR5)),
-	.enable_shift = MXC_CCM_CCGR5_CG5_OFFSET,
+	.enable_shift = MXC_CCM_CCGR5_IPU_OFFSET,
+#else
+	.enable_reg = (u32 *)(CCM_BASE_ADDR +
+		offsetof(struct mxc_ccm_reg, CCGR3)),
+	.enable_shift = MXC_CCM_CCGR3_IPU1_IPU_DI0_OFFSET,
+#endif
 	.enable = clk_ipu_enable,
 	.disable = clk_ipu_disable,
 	.usecount = 0,
 };
 
+#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+static int clk_ldb_clk_enable(struct clk *clk)
+{
+	u32 reg;
+
+	reg = __raw_readl(clk->enable_reg);
+	reg |= MXC_CCM_CCGR_CG_MASK << clk->enable_shift;
+	__raw_writel(reg, clk->enable_reg);
+
+	return 0;
+}
+
+static void clk_ldb_clk_disable(struct clk *clk)
+{
+	u32 reg;
+
+	reg = __raw_readl(clk->enable_reg);
+	reg &= ~(MXC_CCM_CCGR_CG_MASK << clk->enable_shift);
+	__raw_writel(reg, clk->enable_reg);
+}
+
+static struct clk ldb_clk[2] = {
+	{
+	.name = "ldb_clk",
+	.id = 0,
+	.rate = 65000000,
+#ifdef CONFIG_MX6
+	.enable_reg = (u32 *)(CCM_BASE_ADDR +
+		offsetof(struct mxc_ccm_reg, CCGR3)),
+	.enable_shift = MXC_CCM_CCGR3_LDB_DI0_OFFSET,
+#else
+	.enable_reg = (u32 *)(CCM_BASE_ADDR +
+		offsetof(struct mxc_ccm_reg, CCGR6)),
+	.enable_shift = MXC_CCM_CCGR6_LDB_DI0_OFFSET,
+#endif
+	.enable = clk_ldb_clk_enable,
+	.disable = clk_ldb_clk_disable,
+	.usecount = 0,
+	}, {
+	.name = "ldb_clk",
+	.id = 1,
+	.rate = 65000000,
+#ifdef CONFIG_MX6
+	.enable_reg = (u32 *)(CCM_BASE_ADDR +
+		offsetof(struct mxc_ccm_reg, CCGR3)),
+	.enable_shift = MXC_CCM_CCGR3_LDB_DI1_OFFSET,
+#else
+	.enable_reg = (u32 *)(CCM_BASE_ADDR +
+		offsetof(struct mxc_ccm_reg, CCGR6)),
+	.enable_shift = MXC_CCM_CCGR6_LDB_DI1_OFFSET,
+#endif
+	.enable = clk_ldb_clk_enable,
+	.disable = clk_ldb_clk_disable,
+	.usecount = 0,
+	}
+};
+#endif
+
 /* Globals */
 struct clk *g_ipu_clk;
+#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+struct clk *g_ldb_clk[2];
+#endif
 unsigned char g_ipu_clk_enabled;
 struct clk *g_di_clk[2];
 struct clk *g_pixel_clk[2];
@@ -270,50 +326,80 @@ static inline void ipu_ch_param_set_buffer(uint32_t ch, int bufNum,
 
 static void ipu_pixel_clk_recalc(struct clk *clk)
 {
-	u32 div = __raw_readl(DI_BS_CLKGEN0(clk->id));
-	if (div == 0)
-		clk->rate = 0;
-	else
-		clk->rate = (clk->parent->rate * 16) / div;
+	u32 div;
+	u64 final_rate = (unsigned long long)clk->parent->rate * 16;
+
+	div = __raw_readl(DI_BS_CLKGEN0(clk->id));
+	debug("read BS_CLKGEN0 div:%d, final_rate:%lld, prate:%ld\n",
+			div, final_rate, clk->parent->rate);
+
+	clk->rate = 0;
+	if (div != 0) {
+		do_div(final_rate, div);
+		clk->rate = final_rate;
+	}
 }
 
 static unsigned long ipu_pixel_clk_round_rate(struct clk *clk,
 	unsigned long rate)
 {
-	u32 div, div1;
-	u32 tmp;
+	u64 div, final_rate;
+	u32 remainder;
+	u64 parent_rate = (unsigned long long)clk->parent->rate * 16;
+
 	/*
 	 * Calculate divider
 	 * Fractional part is 4 bits,
 	 * so simply multiply by 2^4 to get fractional part.
 	 */
-	tmp = (clk->parent->rate * 16);
-	div = tmp / rate;
-
+	div = parent_rate;
+	remainder = do_div(div, rate);
+	/* Round the divider value */
+	if (remainder > (rate/2))
+		div++;
 	if (div < 0x10)            /* Min DI disp clock divider is 1 */
 		div = 0x10;
 	if (div & ~0xFEF)
 		div &= 0xFF8;
 	else {
-		div1 = div & 0xFE0;
-		if ((tmp/div1 - tmp/div) < rate / 4)
-			div = div1;
-		else
-			div &= 0xFF8;
+		/* Round up divider if it gets us closer to desired pix clk */
+		if ((div & 0xC) == 0xC) {
+			div += 0x10;
+			div &= ~0xF;
+		}
 	}
-	return (clk->parent->rate * 16) / div;
+	final_rate = parent_rate;
+	do_div(final_rate, div);
+
+	return final_rate;
 }
 
 static int ipu_pixel_clk_set_rate(struct clk *clk, unsigned long rate)
 {
-	u32 div = (clk->parent->rate * 16) / rate;
+	u64 div, parent_rate;
+	u32 remainder;
+
+	parent_rate = (unsigned long long)clk->parent->rate * 16;
+	div = parent_rate;
+	remainder = do_div(div, rate);
+	/* Round the divider value */
+	if (remainder > (rate/2))
+		div++;
+
+	/* Round up divider if it gets us closer to desired pix clk */
+	if ((div & 0xC) == 0xC) {
+		div += 0x10;
+		div &= ~0xF;
+	}
+	if (div > 0x1000)
+		debug("Overflow, DI_BS_CLKGEN0 div:0x%x\n", (u32)div);
 
 	__raw_writel(div, DI_BS_CLKGEN0(clk->id));
 
 	/* Setup pixel clock timing */
+	/* Down time is half of period */
 	__raw_writel((div / 16) << 16, DI_BS_CLKGEN1(clk->id));
 
-	clk->rate = (clk->parent->rate * 16) / div;
 	return 0;
 }
 
@@ -340,8 +426,10 @@ static int ipu_pixel_clk_set_parent(struct clk *clk, struct clk *parent)
 
 	if (parent == g_ipu_clk)
 		di_gen &= ~DI_GEN_DI_CLK_EXT;
-	else if (!IS_ERR(g_di_clk[clk->id]) && parent == g_di_clk[clk->id])
+#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+	else if (!IS_ERR(g_di_clk[clk->id]) && parent == g_ldb_clk[clk->id])
 		di_gen |= DI_GEN_DI_CLK_EXT;
+#endif
 	else
 		return -EINVAL;
 
@@ -378,15 +466,24 @@ static struct clk pixel_clk[] = {
 /*
  * This function resets IPU
  */
-void ipu_reset(void)
+static void ipu_reset(void)
 {
 	u32 *reg;
 	u32 value;
+	int timeout = IPU_SW_RST_TOUT_USEC;
 
 	reg = (u32 *)SRC_BASE_ADDR;
 	value = __raw_readl(reg);
 	value = value | SW_IPU_RST;
 	__raw_writel(value, reg);
+
+	while (__raw_readl(reg) & SW_IPU_RST) {
+		udelay(1);
+		if (!(timeout--)) {
+			printf("ipu software reset timeout\n");
+			break;
+		}
+	};
 }
 
 /*
@@ -401,6 +498,7 @@ void ipu_reset(void)
 int ipu_probe(void)
 {
 	unsigned long ipu_base;
+#if defined CONFIG_MX51
 	u32 temp;
 
 	u32 *reg_hsc_mcd = (u32 *)MIPI_HSC_BASE_ADDR;
@@ -414,6 +512,7 @@ int ipu_probe(void)
 
 	temp = __raw_readl(reg_hsc_mxt_conf);
 	__raw_writel(temp | 0x10000, reg_hsc_mxt_conf);
+#endif
 
 	ipu_base = IPU_CTRL_BASE_ADDR;
 	ipu_cpmem_base = (u32 *)(ipu_base + IPU_CPMEM_REG_BASE);
@@ -424,7 +523,12 @@ int ipu_probe(void)
 
 	g_ipu_clk = &ipu_clk;
 	debug("ipu_clk = %u\n", clk_get_rate(g_ipu_clk));
-
+#if defined(CONFIG_MX6) || defined(CONFIG_MX53)
+	g_ldb_clk[0] = &ldb_clk[0];
+	g_ldb_clk[1] = &ldb_clk[1];
+	debug("ldb_clk[0] = %u\n", clk_get_rate(g_ldb_clk[0]));
+	debug("ldb_clk[1] = %u\n", clk_get_rate(g_ldb_clk[1]));
+#endif
 	ipu_reset();
 
 	clk_set_parent(g_pixel_clk[0], g_ipu_clk);

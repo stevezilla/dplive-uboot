@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2007-2008
- * Stelian Pop <stelian.pop@leadtechdesign.com>
+ * Stelian Pop <stelian@popies.net>
  * Lead Tech Design <www.leadtechdesign.com>
  *
  * Copyright (C) 2009
@@ -8,23 +8,7 @@
  *
  * Configuation settings for the Calao TNY-A9260 and TNY-A9G20 boards
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef __CONFIG_H
@@ -45,17 +29,19 @@
 /* Define actual evaluation board type from used processor type */
 #ifdef CONFIG_AT91SAM9G20
 # define CONFIG_TNY_A9G20
+# define MACH_TYPE_TNY_A9G20		2059
+# define CONFIG_MACH_TYPE		MACH_TYPE_TNY_A9G20
 #else
 # define CONFIG_TNY_A9260
+# define MACH_TYPE_TNY_A9260		2058
+# define CONFIG_MACH_TYPE		MACH_TYPE_TNY_A9260
 #endif
 
 /* ARM asynchronous clock */
 #define CONFIG_SYS_AT91_SLOW_CLOCK	32768		/* slow clock xtal */
 #define CONFIG_SYS_AT91_MAIN_CLOCK	12000000	/* 12 MHz crystal */
-#define CONFIG_SYS_HZ		        1000
 
 #define CONFIG_ARCH_CPU_INIT
-#undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff	*/
 #define CONFIG_CMDLINE_TAG	        /* enable passing of ATAGs	*/
 #define CONFIG_SETUP_MEMORY_TAGS
 #define CONFIG_INITRD_TAG
@@ -71,7 +57,6 @@
 #define CONFIG_USART_BASE		ATMEL_BASE_DBGU
 #define	CONFIG_USART_ID			ATMEL_ID_SYS
 #define CONFIG_BAUDRATE			115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{115200 , 19200, 38400, 57600, 9600 }
 
 #define CONFIG_BOOTDELAY	3
 
@@ -100,7 +85,6 @@
 #define CONFIG_SPI
 #define CONFIG_CMD_SPI
 #define CONFIG_ATMEL_SPI
-#define CONFIG_SYS_SPI_WRITE_TOUT		(5 * CONFIG_SYS_HZ)
 
 #define CONFIG_CMD_EEPROM
 #define CONFIG_SPI_M95XXX
@@ -162,11 +146,5 @@
  * Size of malloc() pool
  */
 #define CONFIG_SYS_MALLOC_LEN	ROUND(3 * CONFIG_ENV_SIZE + 128 * 1024, 0x1000)
-
-#define CONFIG_STACKSIZE	(32 * 1024)	/* regular stack */
-
-#ifdef CONFIG_USE_IRQ
-#error CONFIG_USE_IRQ not supported
-#endif
 
 #endif

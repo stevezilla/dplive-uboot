@@ -7,23 +7,7 @@
  * Marvell Semiconductor <www.marvell.com>
  * Contributor: Mahavir Jain <mjain@marvell.com>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -100,7 +84,7 @@ static int smi_reg_read(const char *devname, u8 phy_addr, u8 phy_reg,
 	}
 
 	/* wait for the SMI register to become available */
-	if (armdfec_phy_timeout(&regs->smi, SMI_BUSY, FALSE)) {
+	if (armdfec_phy_timeout(&regs->smi, SMI_BUSY, false)) {
 		printf("ARMD100 FEC: (%s) PHY busy timeout\n",	__func__);
 		return -1;
 	}
@@ -108,7 +92,7 @@ static int smi_reg_read(const char *devname, u8 phy_addr, u8 phy_reg,
 	writel((phy_addr << 16) | (phy_reg << 21) | SMI_OP_R, &regs->smi);
 
 	/* now wait for the data to be valid */
-	if (armdfec_phy_timeout(&regs->smi, SMI_R_VALID, TRUE)) {
+	if (armdfec_phy_timeout(&regs->smi, SMI_R_VALID, true)) {
 		val = readl(&regs->smi);
 		printf("ARMD100 FEC: (%s) PHY Read timeout, val=0x%x\n",
 				__func__, val);
@@ -143,7 +127,7 @@ static int smi_reg_write(const char *devname,
 	}
 
 	/* wait for the SMI register to become available */
-	if (armdfec_phy_timeout(&regs->smi, SMI_BUSY, FALSE)) {
+	if (armdfec_phy_timeout(&regs->smi, SMI_BUSY, false)) {
 		printf("ARMD100 FEC: (%s) PHY busy timeout\n",	__func__);
 		return -1;
 	}
@@ -440,6 +424,7 @@ static int armdfec_init(struct eth_device *dev, bd_t *bd)
 	struct armdfec_device *darmdfec = to_darmdfec(dev);
 	struct armdfec_reg *regs = darmdfec->regs;
 	int phy_adr;
+	u32 temp;
 
 	armdfec_init_rx_desc_ring(darmdfec);
 
@@ -479,9 +464,12 @@ static int armdfec_init(struct eth_device *dev, bd_t *bd)
 	update_hash_table_mac_address(darmdfec, NULL, dev->enetaddr);
 
 	/* Update TX and RX queue descriptor register */
-	writel((u32)darmdfec->p_txdesc, &regs->txcdp[TXQ]);
-	writel((u32)darmdfec->p_rxdesc, &regs->rxfdp[RXQ]);
-	writel((u32)darmdfec->p_rxdesc_curr, &regs->rxcdp[RXQ]);
+	temp = (u32)&regs->txcdp[TXQ];
+	writel((u32)darmdfec->p_txdesc, temp);
+	temp = (u32)&regs->rxfdp[RXQ];
+	writel((u32)darmdfec->p_rxdesc, temp);
+	temp = (u32)&regs->rxcdp[RXQ];
+	writel((u32)darmdfec->p_rxdesc_curr, temp);
 
 	/* Enable Interrupts */
 	writel(ALL_INTS, &regs->im);
@@ -554,15 +542,14 @@ static void armdfec_halt(struct eth_device *dev)
 	clrbits_le32(&regs->pconf, PCR_EN);
 }
 
-static int armdfec_send(struct eth_device *dev, volatile void *dataptr,
-		    int datasize)
+static int armdfec_send(struct eth_device *dev, void *dataptr, int datasize)
 {
 	struct armdfec_device *darmdfec = to_darmdfec(dev);
 	struct armdfec_reg *regs = darmdfec->regs;
 	struct tx_desc *p_txdesc = darmdfec->p_txdesc;
 	void *p = (void *)dataptr;
 	int retry = PHY_WAIT_ITERATIONS * PHY_WAIT_MICRO_SECONDS;
-	u32 cmd_sts;
+	u32 cmd_sts, temp;
 
 	/* Copy buffer if it's misaligned */
 	if ((u32)dataptr & 0x07) {
@@ -583,7 +570,8 @@ static int armdfec_send(struct eth_device *dev, volatile void *dataptr,
 	p_txdesc->byte_cnt = datasize;
 
 	/* Apply send command using high priority TX queue */
-	writel((u32)p_txdesc, &regs->txcdp[TXQ]);
+	temp = (u32)&regs->txcdp[TXQ];
+	writel((u32)p_txdesc, temp);
 	writel(SDMA_CMD_TXDL | SDMA_CMD_TXDH | SDMA_CMD_ERD, &regs->sdma_cmd);
 
 	/*
@@ -614,6 +602,7 @@ static int armdfec_recv(struct eth_device *dev)
 	struct rx_desc *p_rxdesc_curr = darmdfec->p_rxdesc_curr;
 	u32 cmd_sts;
 	u32 timeout = 0;
+	u32 temp;
 
 	/* wait untill rx packet available or timeout */
 	do {
@@ -667,7 +656,8 @@ static int armdfec_recv(struct eth_device *dev)
 	p_rxdesc_curr->buf_size = PKTSIZE_ALIGN;
 	p_rxdesc_curr->byte_cnt = 0;
 
-	writel((u32)p_rxdesc_curr->nxtdesc_p, (u32)&darmdfec->p_rxdesc_curr);
+	temp = (u32)&darmdfec->p_rxdesc_curr;
+	writel((u32)p_rxdesc_curr->nxtdesc_p, temp);
 
 	return 0;
 }
@@ -709,7 +699,7 @@ int armada100_fec_register(unsigned long base_addr)
 	/* Assign ARMADA100 Fast Ethernet Controller Base Address */
 	darmdfec->regs = (void *)base_addr;
 
-	/* must be less than NAMESIZE (16) */
+	/* must be less than sizeof(dev->name) */
 	strcpy(dev->name, "armd-fec0");
 
 	dev->init = armdfec_init;

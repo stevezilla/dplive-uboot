@@ -6,23 +6,7 @@
  *
  * Configuration settings for the LogicPD i.MX31 Litekit board.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef __CONFIG_H
@@ -31,9 +15,7 @@
 #include <asm/arch/imx-regs.h>
 
  /* High Level Configuration Options */
-#define CONFIG_ARM1136		1    /* This is an arm1136 CPU core */
-#define CONFIG_MX31		1    /* in a mx31 */
-#define CONFIG_MX31_HCLK_FREQ	26000000
+#define CONFIG_MX31		1    /* This is a mx31 */
 #define CONFIG_MX31_CLK32	32000
 
 #define CONFIG_DISPLAY_CPUINFO
@@ -63,8 +45,8 @@
  * Hardware drivers
  */
 
-#define CONFIG_MXC_UART	1
-#define CONFIG_SYS_MX31_UART1		1
+#define CONFIG_MXC_UART
+#define CONFIG_MXC_UART_BASE	UART1_BASE
 #define CONFIG_MXC_GPIO
 
 #define CONFIG_HARD_SPI		1
@@ -73,9 +55,9 @@
 #define CONFIG_DEFAULT_SPI_MODE	(SPI_MODE_0 | SPI_CS_HIGH)
 
 /* PMIC Controller */
-#define CONFIG_PMIC
-#define CONFIG_PMIC_SPI
-#define CONFIG_PMIC_FSL
+#define CONFIG_POWER
+#define CONFIG_POWER_SPI
+#define CONFIG_POWER_FSL
 #define CONFIG_FSL_PMIC_BUS	1
 #define CONFIG_FSL_PMIC_CS	0
 #define CONFIG_FSL_PMIC_CLK	1000000
@@ -87,7 +69,6 @@
 #define CONFIG_ENV_OVERWRITE
 #define CONFIG_CONS_INDEX	1
 #define CONFIG_BAUDRATE		115200
-#define CONFIG_SYS_BAUDRATE_TABLE	{9600, 19200, 38400, 57600, 115200}
 
 /***********************************************************
  * Command definition
@@ -135,16 +116,7 @@
 
 #define CONFIG_SYS_LOAD_ADDR		0 /* default load address */
 
-#define CONFIG_SYS_HZ			1000
-
 #define CONFIG_CMDLINE_EDITING	1
-
-/*-----------------------------------------------------------------------
- * Stack sizes
- *
- * The stack sizes are set up in start.S using the settings below
- */
-#define CONFIG_STACKSIZE	(128 * 1024) /* regular stack */
 
 /*-----------------------------------------------------------------------
  * Physical Memory Map

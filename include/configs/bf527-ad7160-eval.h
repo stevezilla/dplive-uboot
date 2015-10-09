@@ -69,7 +69,6 @@
 #define CONFIG_DRIVER_NAND_BFIN
 #define CONFIG_SYS_NAND_BASE		0 /* not actually used */
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
-#define NAND_MAX_CHIPS		1
 #endif
 
 
@@ -120,8 +119,8 @@
 /*
  * I2C Settings
  */
-#define CONFIG_BFIN_TWI_I2C	1
-#define CONFIG_HARD_I2C		1
+#define CONFIG_SYS_I2C
+#define CONFIG_SYS_I2C_ADI
 
 
 /*
@@ -137,7 +136,6 @@
  */
 #define CONFIG_MISC_INIT_R
 #define CONFIG_UART_CONSOLE	0
-
 
 /*
  * Pull in common ADI header for remaining command/environment setup

@@ -2,23 +2,7 @@
  * (C) Copyright 2002
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
@@ -242,12 +226,11 @@ static void purge_tx_ring (struct eth_device *dev);
 static void read_hw_addr (struct eth_device *dev, bd_t * bis);
 
 static int eepro100_init (struct eth_device *dev, bd_t * bis);
-static int eepro100_send (struct eth_device *dev, volatile void *packet,
-						  int length);
+static int eepro100_send(struct eth_device *dev, void *packet, int length);
 static int eepro100_recv (struct eth_device *dev);
 static void eepro100_halt (struct eth_device *dev);
 
-#if defined(CONFIG_E500) || defined(CONFIG_DB64360) || defined(CONFIG_DB64460)
+#if defined(CONFIG_E500)
 #define bus_to_phys(a) (a)
 #define phys_to_bus(a) (a)
 #else
@@ -608,7 +591,7 @@ static int eepro100_init (struct eth_device *dev, bd_t * bis)
 	return status;
 }
 
-static int eepro100_send (struct eth_device *dev, volatile void *packet, int length)
+static int eepro100_send(struct eth_device *dev, void *packet, int length)
 {
 	int i, status = -1;
 	int tx_cur;
@@ -691,7 +674,7 @@ static int eepro100_recv (struct eth_device *dev)
 			/* Pass the packet up to the protocol
 			 * layers.
 			 */
-			NetReceive (rx_ring[rx_next].data, length);
+			NetReceive((u8 *)rx_ring[rx_next].data, length);
 		} else {
 			/* There was an error.
 			 */

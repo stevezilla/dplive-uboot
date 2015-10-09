@@ -3,8 +3,6 @@
 
 #undef DEBUG
 
-#define CONFIG_SH		1
-#define CONFIG_SH4		1
 #define CONFIG_CPU_SH7751	1
 #define CONFIG_CPU_SH_TYPE_R	1
 #define CONFIG_R2DPLUS		1
@@ -15,7 +13,6 @@
  */
 #include <config_cmd_default.h>
 
-#define CONFIG_CMD_DFL
 #define CONFIG_CMD_CACHE
 #define CONFIG_CMD_FLASH
 #define CONFIG_CMD_PCI
@@ -42,13 +39,10 @@
 
 #define CONFIG_SYS_TEXT_BASE	0x0FFC0000
 #define CONFIG_SYS_LONGHELP
-#define CONFIG_SYS_PROMPT		"=> "
 #define CONFIG_SYS_CBSIZE		256
 #define CONFIG_SYS_PBSIZE		256
 #define CONFIG_SYS_MAXARGS		16
 #define CONFIG_SYS_BARGSIZE		512
-/* List of legal baudrate settings for this board */
-#define CONFIG_SYS_BAUDRATE_TABLE	{ 115200, 57600, 38400, 19200, 9600 }
 
 #define CONFIG_SYS_MEMTEST_START	(CONFIG_SYS_SDRAM_BASE)
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_TEXT_BASE - 0x100000)
@@ -80,8 +74,9 @@
  * SuperH Clock setting
  */
 #define CONFIG_SYS_CLK_FREQ	60000000
+#define CONFIG_SH_TMU_CLK_FREQ CONFIG_SYS_CLK_FREQ
+#define CONFIG_SH_SCIF_CLK_FREQ CONFIG_SYS_CLK_FREQ
 #define CONFIG_SYS_TMU_CLK_DIV		4
-#define CONFIG_SYS_HZ		1000
 #define	CONFIG_SYS_PLL_SETTLING_TIME	100/* in us */
 
 /*

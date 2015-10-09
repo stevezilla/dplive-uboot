@@ -3,6 +3,7 @@
  */
 
 #include <common.h>
+#include <cli.h>
 #include <command.h>
 #include <linux/ctype.h>
 #include <net.h>
@@ -15,12 +16,11 @@ DECLARE_GLOBAL_DATA_PTR;
 
 extern void show_regs __P ((struct pt_regs *));
 extern int run_command __P ((const char *, int));
-extern char console_buffer[];
 
 ulong dis_last_addr = 0;	/* Last address disassembled   */
 ulong dis_last_len = 20;	/* Default disassembler length */
 CPU_DEBUG_CTX bug_ctx;		/* Bedbug context structure    */
-
+
 
 /* ======================================================================
  * U-Boot's puts function does not append a newline, so the bedbug stuff
@@ -34,7 +34,7 @@ int bedbug_puts (const char *str)
 	printf ("%s\r\n", str);
 	return 0;
 }				/* bedbug_puts */
-
+
 
 
 /* ======================================================================
@@ -66,7 +66,7 @@ void bedbug_init (void)
 
 	return;
 }				/* bedbug_init */
-
+
 
 
 /* ======================================================================
@@ -85,7 +85,7 @@ int do_bedbug_dis (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	len = dis_last_len;
 
 	if (argc < 2)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	if ((flag & CMD_FLAG_REPEAT) == 0) {
 		/* New command */
@@ -107,7 +107,7 @@ int do_bedbug_dis (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD (ds, 3, 1, do_bedbug_dis,
 	    "disassemble memory",
 	    "ds <address> [# instructions]");
-
+
 /* ======================================================================
  * Entry point from the interpreter to the assembler.  Assembles
  * instructions in consecutive memory locations until a '.' (period) is
@@ -124,7 +124,7 @@ int do_bedbug_asm (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 	int rcode = 0;
 
 	if (argc < 2)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	printf ("\nEnter '.' when done\n");
 	mem_addr = simple_strtoul (argv[1], NULL, 16);
@@ -135,7 +135,7 @@ int do_bedbug_asm (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 			F_RADHEX);
 
 		sprintf (prompt, "%08lx:    ", mem_addr);
-		readline (prompt);
+		cli_readline(prompt);
 
 		if (console_buffer[0] && strcmp (console_buffer, ".")) {
 			if ((instr =
@@ -157,7 +157,7 @@ int do_bedbug_asm (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 
 U_BOOT_CMD (as, 2, 0, do_bedbug_asm,
 	    "assemble memory", "as <address>");
-
+
 /* ======================================================================
  * Used to set a break point from the interpreter.  Simply calls into the
  * CPU-specific break point set routine.
@@ -178,7 +178,7 @@ U_BOOT_CMD (break, 3, 0, do_bedbug_break,
 	    "break <address> - Break at an address\n"
 	    "break off <bp#> - Disable breakpoint.\n"
 	    "break show      - List breakpoints.");
-
+
 /* ======================================================================
  * Called from the debug interrupt routine.  Simply calls the CPU-specific
  * breakpoint handling routine.
@@ -193,7 +193,7 @@ void do_bedbug_breakpoint (struct pt_regs *regs)
 
 	return;
 }				/* do_bedbug_breakpoint */
-
+
 
 
 /* ======================================================================
@@ -226,7 +226,7 @@ void bedbug_main_loop (unsigned long addr, struct pt_regs *regs)
 
 	/* A miniature main loop */
 	while (bug_ctx.stopped) {
-		len = readline (prompt_str);
+		len = cli_readline(prompt_str);
 
 		flag = 0;	/* assume no special flags for now */
 
@@ -238,7 +238,7 @@ void bedbug_main_loop (unsigned long addr, struct pt_regs *regs)
 		if (len == -1)
 			printf ("<INTERRUPT>\n");
 		else
-			rc = run_command (lastcommand, flag);
+			rc = run_command_repeatable(lastcommand, flag);
 
 		if (rc <= 0) {
 			/* invalid command or not repeatable, forget it */
@@ -251,7 +251,7 @@ void bedbug_main_loop (unsigned long addr, struct pt_regs *regs)
 
 	return;
 }				/* bedbug_main_loop */
-
+
 
 
 /* ======================================================================
@@ -275,7 +275,7 @@ int do_bedbug_continue (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv
 U_BOOT_CMD (continue, 1, 0, do_bedbug_continue,
 	    "continue from a breakpoint",
 	    "");
-
+
 /* ======================================================================
  * Interpreter command to continue to the next instruction, stepping into
  * subroutines.  Works by calling the find_next_addr() routine to compute
@@ -293,7 +293,7 @@ int do_bedbug_step (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 		return 1;
 	}
 
-	if (!find_next_address ((unsigned char *) &addr, FALSE, bug_ctx.regs))
+	if (!find_next_address((unsigned char *) &addr, false, bug_ctx.regs))
 		return 1;
 
 	if (bug_ctx.set)
@@ -306,7 +306,7 @@ int do_bedbug_step (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD (step, 1, 1, do_bedbug_step,
 	    "single step execution.",
 	    "");
-
+
 /* ======================================================================
  * Interpreter command to continue to the next instruction, stepping over
  * subroutines.  Works by calling the find_next_addr() routine to compute
@@ -324,7 +324,7 @@ int do_bedbug_next (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 		return 1;
 	}
 
-	if (!find_next_address ((unsigned char *) &addr, TRUE, bug_ctx.regs))
+	if (!find_next_address((unsigned char *) &addr, true, bug_ctx.regs))
 		return 1;
 
 	if (bug_ctx.set)
@@ -337,7 +337,7 @@ int do_bedbug_next (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD (next, 1, 1, do_bedbug_next,
 	    "single step execution, stepping over subroutines.",
 	    "");
-
+
 /* ======================================================================
  * Interpreter command to print the current stack.  This assumes an EABI
  * architecture, so it starts with GPR R1 and works back up the stack.
@@ -382,7 +382,7 @@ int do_bedbug_stack (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 U_BOOT_CMD (where, 1, 1, do_bedbug_stack,
 	    "Print the running stack.",
 	    "");
-
+
 /* ======================================================================
  * Interpreter command to dump the registers.  Calls the CPU-specific
  * show registers routine.

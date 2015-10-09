@@ -6,30 +6,13 @@
  *	Copyright (C) 2011	Macpaul Lin <macpaul@andestech.com>
  *				Greentime Hu <greentime@andestech.com>
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <asm-offsets.h>
 #include <config.h>
 #include <common.h>
 #include <asm/macro.h>
-#include <version.h>
 
 /*
  * Jump vector table for EVIC mode
@@ -68,15 +51,17 @@ _start:	j	reset
 	j	tlb_not_present
 	j	tlb_misc
 	j	tlb_vlpt_miss
-	j	cache_parity_error
+	j	machine_error
 	j	debug
 	j	general_exception
+	j	syscall
 	j	internal_interrupt		! H0I
 	j	internal_interrupt		! H1I
 	j	internal_interrupt		! H2I
 	j	internal_interrupt		! H3I
 	j	internal_interrupt		! H4I
 	j	internal_interrupt		! H5I
+	j	software_interrupt		! S0I
 
 	.balign 16
 
@@ -238,7 +223,7 @@ fix_got_loop:
 clear_bss:
 	la	$r0, __bss_start	/* r0 <- rel __bss_start in FLASH */
 	add	$r0, $r0, $r9		/* r0 <- rel __bss_start in FLASH */
-	la	$r1, __bss_end__	/* r1 <- rel __bss_end in RAM */
+	la	$r1, __bss_end		/* r1 <- rel __bss_end in RAM */
 	add	$r1, $r1, $r9		/* r0 <- rel __bss_end in RAM */
 	li	$r2, 0x00000000		/* clear */
 
@@ -477,7 +462,7 @@ tlb_vlpt_miss:
 	bal	do_interruption
 
 	.align	5
-cache_parity_error:
+machine_error:
 	SAVE_ALL
 	move	$r0, $sp			! To get the kernel stack
 	li	$r1, 5				! Determine interruption type
@@ -498,10 +483,24 @@ general_exception:
 	bal	do_interruption
 
 	.align	5
-internal_interrupt:
+syscall:
 	SAVE_ALL
 	move	$r0, $sp			! To get the kernel stack
 	li	$r1, 8				! Determine interruption type
+	bal	do_interruption
+
+	.align	5
+internal_interrupt:
+	SAVE_ALL
+	move	$r0, $sp			! To get the kernel stack
+	li	$r1, 9				! Determine interruption type
+	bal	do_interruption
+
+	.align	5
+software_interrupt:
+	SAVE_ALL
+	move	$r0, $sp			! To get the kernel stack
+	li	$r1, 10				! Determine interruption type
 	bal	do_interruption
 
 	.align	5

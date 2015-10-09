@@ -3,15 +3,7 @@
  *
  * Copyright (C) 2006-2011 Texas Instruments Incorporated - http://www.ti.com/
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed "as is" WITHOUT ANY WARRANTY of any
- * kind, whether express or implied; without even the implied warranty
- * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #ifndef __OMAP3_EVM_COMMON_H
@@ -21,16 +13,17 @@
  * High level configuration options
  */
 #define CONFIG_OMAP			/* This is TI OMAP core */
-#define CONFIG_OMAP34XX			/* belonging to 34XX family */
-#define CONFIG_OMAP3430			/* which is in a 3430 */
+#define CONFIG_OMAP_GPIO
+#define CONFIG_OMAP_COMMON
+/* Common ARM Erratas */
+#define CONFIG_ARM_ERRATA_454179
+#define CONFIG_ARM_ERRATA_430973
+#define CONFIG_ARM_ERRATA_621766
 
 #define CONFIG_SDRC			/* The chip has SDRC controller */
 
 #define CONFIG_OMAP3_EVM		/* This is a OMAP3 EVM */
-#define CONFIG_OMAP3_MICRON_DDR		/* with MICRON DDR part */
 #define CONFIG_TWL4030_POWER		/* with TWL4030 PMIC */
-
-#undef CONFIG_USE_IRQ			/* no support for IRQs */
 
 /*
  * Clock related definitions
@@ -45,7 +38,6 @@
  */
 #define CONFIG_SYS_TIMERBASE		OMAP34XX_GPT2
 #define CONFIG_SYS_PTV			2	/* Divisor: 2^(PTV+1) => 8 */
-#define CONFIG_SYS_HZ			1000
 
 /* Size of environment - 128KB */
 #define CONFIG_ENV_SIZE			(128 << 10)
@@ -54,28 +46,13 @@
 #define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (128 << 10))
 
 /*
- * Stack sizes
- * These values are used in start.S
- */
-#define CONFIG_STACKSIZE	(128 << 10)	/* regular stack 128 KiB */
-
-#ifdef CONFIG_USE_IRQ
-#define CONFIG_STACKSIZE_IRQ	(4 << 10)	/* IRQ stack 4 KiB */
-#define CONFIG_STACKSIZE_FIQ	(4 << 10)	/* FIQ stack 4 KiB */
-#endif
-
-/*
  * Physical Memory Map
  * Note 1: CS1 may or may not be populated
  * Note 2: SDRAM size is expected to be at least 32MB
  */
 #define CONFIG_NR_DRAM_BANKS		2
 #define PHYS_SDRAM_1			OMAP34XX_SDRC_CS0
-#define PHYS_SDRAM_1_SIZE		(32 << 20)
 #define PHYS_SDRAM_2			OMAP34XX_SDRC_CS1
-
-/* SDRAM Bank Allocation method */
-#define SDRC_R_B_C
 
 /* Limits for memtest */
 #define CONFIG_SYS_MEMTEST_START	(OMAP34XX_SDRC_CS0)
@@ -113,20 +90,14 @@
 /*
  * I2C
  */
-#define CONFIG_HARD_I2C
-#define CONFIG_DRIVER_OMAP34XX_I2C
-
-#define CONFIG_SYS_I2C_SPEED		100000
-#define CONFIG_SYS_I2C_SLAVE		1
-#define CONFIG_SYS_I2C_BUS		0
-#define CONFIG_SYS_I2C_BUS_SELECT	1
+#define CONFIG_SYS_I2C
+#define CONFIG_SYS_OMAP24_I2C_SPEED	100000
+#define CONFIG_SYS_OMAP24_I2C_SLAVE	1
+#define CONFIG_SYS_I2C_OMAP34XX
 
 /*
  * PISMO support
  */
-#define PISMO1_NAND_SIZE		GPMC_SIZE_128M
-#define PISMO1_ONEN_SIZE		GPMC_SIZE_128M
-
 /* Monitor at start of flash - Reserve 2 sectors */
 #define CONFIG_SYS_MONITOR_BASE		CONFIG_SYS_FLASH_BASE
 
@@ -149,7 +120,7 @@
 
 /* Max number of NAND devices */
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
-
+#define CONFIG_SYS_NAND_BUSWIDTH_16BIT	16
 /* Timeout values (in ticks) */
 #define CONFIG_SYS_FLASH_ERASE_TOUT	(100 * CONFIG_SYS_HZ)
 #define CONFIG_SYS_FLASH_WRITE_TOUT	(100 * CONFIG_SYS_HZ)
@@ -209,7 +180,6 @@
  * ----------------------------------------------------------------------------
  */
 #define CONFIG_SYS_PROMPT		"OMAP3_EVM # "
-#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_SYS_MAXARGS		16	/* max args for a command */
 
 #define CONFIG_MISC_INIT_R
@@ -235,13 +205,12 @@
  * NAND / OneNAND
  */
 #if defined(CONFIG_CMD_NAND)
-#define CONFIG_SYS_FLASH_BASE		PISMO1_NAND_BASE
+#define CONFIG_SYS_FLASH_BASE		NAND_BASE
 
 #define CONFIG_NAND_OMAP_GPMC
-#define GPMC_NAND_ECC_LP_x16_LAYOUT
 #define CONFIG_ENV_OFFSET		SMNAND_ENV_OFFSET
 #elif defined(CONFIG_CMD_ONENAND)
-#define CONFIG_SYS_FLASH_BASE		PISMO1_ONEN_BASE
+#define CONFIG_SYS_FLASH_BASE		ONENAND_MAP
 #define CONFIG_SYS_ONENAND_BASE		ONENAND_MAP
 #endif
 
@@ -259,7 +228,6 @@
 #if defined(CONFIG_CMD_NET)
 
 /* Ethernet (SMSC9115 from SMSC9118 family) */
-#define CONFIG_NET_MULTI
 #define CONFIG_SMC911X
 #define CONFIG_SMC911X_32_BIT
 #define CONFIG_SMC911X_BASE		0x2C000000
@@ -288,5 +256,35 @@
 
 /* Uncomment to define the board revision statically */
 /* #define CONFIG_STATIC_BOARD_REV	OMAP3EVM_BOARD_GEN_2 */
+
+#define CONFIG_SYS_CACHELINE_SIZE	64
+
+/* Defines for SPL */
+#define CONFIG_SPL_FRAMEWORK
+#define CONFIG_SPL_TEXT_BASE		0x40200800
+#define CONFIG_SPL_MAX_SIZE		(54 * 1024)	/* 8 KB for stack */
+
+#define CONFIG_SPL_BSS_START_ADDR	0x80000000
+#define CONFIG_SPL_BSS_MAX_SIZE		0x80000		/* 512 KB */
+
+#define CONFIG_SPL_BOARD_INIT
+#define CONFIG_SPL_LIBCOMMON_SUPPORT
+#define CONFIG_SPL_LIBDISK_SUPPORT
+#define CONFIG_SPL_I2C_SUPPORT
+#define CONFIG_SPL_LIBGENERIC_SUPPORT
+#define CONFIG_SPL_SERIAL_SUPPORT
+#define CONFIG_SPL_POWER_SUPPORT
+#define CONFIG_SPL_OMAP3_ID_NAND
+#define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/omap-common/u-boot-spl.lds"
+
+/*
+ * 1MB into the SDRAM to allow for SPL's bss at the beginning of SDRAM
+ * 64 bytes before this address should be set aside for u-boot.img's
+ * header. That is 0x800FFFC0--0x80100000 should not be used for any
+ * other needs.
+ */
+#define CONFIG_SYS_TEXT_BASE		0x80100000
+#define CONFIG_SYS_SPL_MALLOC_START	0x80208000
+#define CONFIG_SYS_SPL_MALLOC_SIZE	0x100000
 
 #endif /* __OMAP3_EVM_COMMON_H */

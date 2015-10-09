@@ -2,23 +2,7 @@
  * (C) Copyright 2001
  * Gerald Van Baren, Custom IDEAS, vanbaren@cideas.com.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -102,6 +86,7 @@ static int legacy_miiphy_write(struct mii_dev *bus, int addr, int devad,
 /*****************************************************************************
  *
  * Register read and write MII access routines for the device <name>.
+ * This API is now deprecated. Please use mdio_alloc and mdio_register, instead.
  */
 void miiphy_register(const char *name,
 		      int (*read)(const char *devname, unsigned char addr,
@@ -281,6 +266,8 @@ static struct mii_dev *miiphy_get_active_dev(const char *devname)
  * Read to variable <value> from the PHY attached to device <devname>,
  * use PHY address <addr> and register <reg>.
  *
+ * This API is deprecated. Use phy_read on a phy_device found via phy_connect
+ *
  * Returns:
  *   0 on success
  */
@@ -306,6 +293,8 @@ int miiphy_read(const char *devname, unsigned char addr, unsigned char reg,
  *
  * Write <value> to the PHY attached to device <devname>,
  * use PHY address <addr> and register <reg>.
+ *
+ * This API is deprecated. Use phy_write on a phy_device found by phy_connect
  *
  * Returns:
  *   0 on success
@@ -350,6 +339,8 @@ void miiphy_listdev(void)
  * Model:    6 bits (unsigned char)
  * Revision: 4 bits (unsigned char)
  *
+ * This API is deprecated.
+ *
  * Returns:
  *   0 on success
  */
@@ -389,6 +380,9 @@ int miiphy_info(const char *devname, unsigned char addr, unsigned int *oui,
 /*****************************************************************************
  *
  * Reset the PHY.
+ *
+ * This API is deprecated. Use PHYLIB.
+ *
  * Returns:
  *   0 on success
  */

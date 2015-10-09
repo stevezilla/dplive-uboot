@@ -2,28 +2,13 @@
  * (C) Copyright 2002
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <common.h>
 #include <stdio_dev.h>
 #include <watchdog.h>
+#include <div64.h>
 #include <post.h>
 
 #ifdef CONFIG_SYS_POST_HOTKEYS_GPIO
@@ -67,7 +52,7 @@ int post_init_f(void)
  * Boards with hotkey support can override this weak default function
  * by defining one in their board specific code.
  */
-int __post_hotkeys_pressed(void)
+__weak int post_hotkeys_pressed(void)
 {
 #ifdef CONFIG_SYS_POST_HOTKEYS_GPIO
 	int ret;
@@ -88,9 +73,6 @@ int __post_hotkeys_pressed(void)
 
 	return 0;	/* No hotkeys supported */
 }
-int post_hotkeys_pressed(void)
-	__attribute__((weak, alias("__post_hotkeys_pressed")));
-
 
 void post_bootmode_init(void)
 {
@@ -157,7 +139,7 @@ void post_output_backlog(void)
 				post_log("PASSED\n");
 			else {
 				post_log("FAILED\n");
-				show_boot_progress(-31);
+				bootstage_error(BOOTSTAGE_ID_POST_FAIL_R);
 			}
 		}
 	}
@@ -251,11 +233,9 @@ static void post_get_flags(int *test_flags)
 			test_flags[j] |= POST_SLOWTEST;
 }
 
-void __show_post_progress(unsigned int test_num, int before, int result)
+__weak void show_post_progress(unsigned int test_num, int before, int result)
 {
 }
-void show_post_progress(unsigned int, int, int)
-			__attribute__((weak, alias("__show_post_progress")));
 
 static int post_run_single(struct post_test *test,
 				int test_flags, int flags, unsigned int i)
@@ -294,7 +274,7 @@ static int post_run_single(struct post_test *test,
 		} else {
 			if ((*test->test)(flags) != 0) {
 				post_log("FAILED\n");
-				show_boot_progress(-32);
+				bootstage_error(BOOTSTAGE_ID_POST_FAIL_R);
 				show_post_progress(i, POST_AFTER, POST_FAILED);
 				if (test_flags & POST_CRITICAL)
 					gd->flags |= GD_FLG_POSTFAIL;
@@ -494,8 +474,8 @@ void post_reloc(void)
  */
 unsigned long post_time_ms(unsigned long base)
 {
-#if defined(CONFIG_PPC) || defined(CONFIG_ARM)
-	return (unsigned long)(get_ticks() / (get_tbclk() / CONFIG_SYS_HZ))
+#if defined(CONFIG_PPC) || defined(CONFIG_BLACKFIN) || defined(CONFIG_ARM)
+	return (unsigned long)lldiv(get_ticks(), get_tbclk() / CONFIG_SYS_HZ)
 		- base;
 #else
 #warning "Not implemented yet"

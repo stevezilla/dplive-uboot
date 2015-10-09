@@ -189,12 +189,12 @@ struct ethoc_bd {
 	u32 addr;
 };
 
-static inline u32 ethoc_read(struct eth_device *dev, loff_t offset)
+static inline u32 ethoc_read(struct eth_device *dev, size_t offset)
 {
 	return readl(dev->iobase + offset);
 }
 
-static inline void ethoc_write(struct eth_device *dev, loff_t offset, u32 data)
+static inline void ethoc_write(struct eth_device *dev, size_t offset, u32 data)
 {
 	writel(data, dev->iobase + offset);
 }
@@ -202,7 +202,7 @@ static inline void ethoc_write(struct eth_device *dev, loff_t offset, u32 data)
 static inline void ethoc_read_bd(struct eth_device *dev, int index,
 				 struct ethoc_bd *bd)
 {
-	loff_t offset = ETHOC_BD_BASE + (index * sizeof(struct ethoc_bd));
+	size_t offset = ETHOC_BD_BASE + (index * sizeof(struct ethoc_bd));
 	bd->stat = ethoc_read(dev, offset + 0);
 	bd->addr = ethoc_read(dev, offset + 4);
 }
@@ -210,7 +210,7 @@ static inline void ethoc_read_bd(struct eth_device *dev, int index,
 static inline void ethoc_write_bd(struct eth_device *dev, int index,
 				  const struct ethoc_bd *bd)
 {
-	loff_t offset = ETHOC_BD_BASE + (index * sizeof(struct ethoc_bd));
+	size_t offset = ETHOC_BD_BASE + (index * sizeof(struct ethoc_bd));
 	ethoc_write(dev, offset + 0, bd->stat);
 	ethoc_write(dev, offset + 4, bd->addr);
 }
@@ -271,7 +271,7 @@ static int ethoc_init_ring(struct eth_device *dev)
 		if (i == priv->num_rx - 1)
 			bd.stat |= RX_BD_WRAP;
 
-		flush_dcache(bd.addr, PKTSIZE_ALIGN);
+		flush_dcache_range(bd.addr, bd.addr + PKTSIZE_ALIGN);
 		ethoc_write_bd(dev, priv->num_tx + i, &bd);
 	}
 
@@ -376,7 +376,7 @@ static int ethoc_rx(struct eth_device *dev, int limit)
 		}
 
 		/* clear the buffer descriptor so it can be reused */
-		flush_dcache(bd.addr, PKTSIZE_ALIGN);
+		flush_dcache_range(bd.addr, bd.addr + PKTSIZE_ALIGN);
 		bd.stat &= ~RX_BD_STATS;
 		bd.stat |= RX_BD_EMPTY;
 		ethoc_write_bd(dev, entry, &bd);
@@ -414,7 +414,7 @@ static void ethoc_tx(struct eth_device *dev)
 		(void)ethoc_update_tx_stats(&bd);
 }
 
-static int ethoc_send(struct eth_device *dev, volatile void *packet, int length)
+static int ethoc_send(struct eth_device *dev, void *packet, int length)
 {
 	struct ethoc *priv = (struct ethoc *)dev->priv;
 	struct ethoc_bd bd;
@@ -430,7 +430,7 @@ static int ethoc_send(struct eth_device *dev, volatile void *packet, int length)
 		bd.stat &= ~TX_BD_PAD;
 	bd.addr = (u32)packet;
 
-	flush_dcache(bd.addr, length);
+	flush_dcache_range(bd.addr, bd.addr + length);
 	bd.stat &= ~(TX_BD_STATS | TX_BD_LEN_MASK);
 	bd.stat |= TX_BD_LEN(length);
 	ethoc_write_bd(dev, entry, &bd);

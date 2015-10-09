@@ -2,23 +2,7 @@
  * (C) Copyright 2001
  * Erik Theisen,  Wave 7 Optics, etheisen@mindspring.com.
  *
- * See file CREDITS for list of people who contributed to this
- * project.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * SPDX-License-Identifier:	GPL-2.0+
  */
 
 /*
@@ -26,6 +10,7 @@
  */
 
 #include <common.h>
+#include <cli.h>
 #include <config.h>
 #include <command.h>
 
@@ -45,7 +30,7 @@ int do_getdcr ( cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[] )
 
 	/* Validate arguments */
 	if (argc < 2)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	/* Get a DCR */
 	dcrn = (unsigned short) simple_strtoul (argv[1], NULL, 16);
@@ -68,18 +53,17 @@ int do_setdcr (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 
 	/* DCR's value */
 	int nbytes;
-	extern char console_buffer[];
 
 	/* Validate arguments */
 	if (argc < 2)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	/* Set a DCR */
 	dcrn = (unsigned short) simple_strtoul (argv[1], NULL, 16);
 	do {
 		value = get_dcr (dcrn);
 		printf ("%04x: %08lx", dcrn, value);
-		nbytes = readline (" ? ");
+		nbytes = cli_readline(" ? ");
 		if (nbytes == 0) {
 			/*
 			 * <CR> pressed as only input, don't modify current
@@ -117,7 +101,7 @@ int do_getidcr (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	/* Validate arguments */
 	if (argc < 3)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	/* Find out whether ther is '.' (dot) symbol in the first parameter. */
 	strncpy (buf, argv[1], sizeof(buf)-1);
@@ -171,7 +155,7 @@ int do_setidcr (cmd_tbl_t * cmdtp, int flag, int argc, char * const argv[])
 
 	/* Validate arguments */
 	if (argc < 4)
-		return cmd_usage(cmdtp);
+		return CMD_RET_USAGE;
 
 	/* Find out whether ther is '.' (dot) symbol in the first parameter. */
 	strncpy (buf, argv[1], sizeof(buf)-1);
