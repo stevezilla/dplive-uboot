@@ -1,7 +1,7 @@
 if TARGET_MX6AMHERSTSOLO
 
 config SYS_BOARD
-	default "mx6amherstolo"
+	default "mx6amherstsolo"
 
 config SYS_VENDOR
 	default "freescale"
