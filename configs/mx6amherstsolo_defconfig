@@ -1,4 +1,4 @@
-CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6amherstsolo/imximage.cfg,MX6SOLO,SYS_NOSMP="nosmp""
+CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6amherstsolo/imximage.cfg,MX6SOLO,MX6S,SYS_NOSMP="nosmp""
 CONFIG_ARM=y
 CONFIG_TARGET_MX6AMHERSTSOLO=y
 CONFIG_SYS_MALLOC_F=y
