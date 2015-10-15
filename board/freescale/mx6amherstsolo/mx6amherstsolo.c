@@ -283,7 +283,7 @@ int board_mmc_init(bd_t *bis)
 	 * mmc1                    SD3
 	 * mmc2                    eMMC
 	 */
-	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
+	for (i = 0; i < 4; i++) {
 		switch (i) {
 		case 0:
 			imx_iomux_v3_setup_multiple_pads(
