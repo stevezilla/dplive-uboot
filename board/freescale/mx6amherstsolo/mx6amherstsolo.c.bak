@@ -21,37 +21,13 @@
 #include <miiphy.h>
 #include <netdev.h>
 
-#if defined(CONFIG_MX6DL) && defined(CONFIG_MXC_EPDC)
-#include <lcd.h>
-#include <mxc_epdc_fb.h>
-#endif
 #include <asm/arch/mxc_hdmi.h>
 #include <asm/arch/crm_regs.h>
 #include <asm/io.h>
 #include <asm/arch/sys_proto.h>
 #include <i2c.h>
-#include <ipu_pixfmt.h>
-#include <linux/fb.h>
 #include <power/pmic.h>
 #include <power/pfuze100_pmic.h>
-#include "../common/pfuze.h"
-#include <asm/arch/mx6-ddr.h>
-#include <usb.h>
-
-#if defined(CONFIG_MX6DL) && defined(CONFIG_MXC_EPDC)
-#include <lcd.h>
-#include <mxc_epdc_fb.h>
-#endif
-#ifdef CONFIG_CMD_SATA
-#include <asm/imx-common/sata.h>
-#endif
-#ifdef CONFIG_FSL_FASTBOOT
-#include <fsl_fastboot.h>
-#ifdef CONFIG_ANDROID_RECOVERY
-#include <recovery.h>
-#endif
-#endif /*CONFIG_FSL_FASTBOOT*/
-
 DECLARE_GLOBAL_DATA_PTR;
 
 #define UART_PAD_CTRL  (PAD_CTL_PUS_100K_UP |			\
