@@ -319,7 +319,7 @@ int board_mmc_init(bd_t *bis)
 		default:
 			printf("Warning: you configured more USDHC controllers"
 			       "(%d) then supported by the board (%d)\n",
-			       i + 1, CONFIG_SYS_FSL_USDHC_NUM);
+			       i + 1, 4);
 			return status;
 		}
 
